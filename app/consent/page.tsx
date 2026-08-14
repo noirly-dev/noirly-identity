@@ -1,18 +1,26 @@
 "use client";
 
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-
-async function getCsrf(): Promise<string> {
-  const res = await fetch("/api/auth/csrf", { credentials: "include" });
-  const data = (await res.json()) as { csrfToken: string };
-  return data.csrfToken;
-}
+import { getCsrf } from "@/lib/auth/csrf-client";
+import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { ActionButton } from "@/components/identity/Buttons";
+import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
 function ConsentForm() {
   const params = useSearchParams();
   const [csrf, setCsrf] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const clientId = params.get("client_id") ?? "unknown-client";
+  const redirectUri = params.get("redirect_uri") ?? "";
+  const scopes = useMemo(
+    () =>
+      (params.get("scope") ?? "")
+        .split(/\s+/)
+        .map((scope) => scope.trim())
+        .filter(Boolean),
+    [params],
+  );
 
   useEffect(() => {
     void getCsrf().then(setCsrf);
@@ -49,7 +57,10 @@ function ConsentForm() {
     }
 
     if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { message?: string; error_description?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        error_description?: string;
+      };
       setError(data.error_description || data.message || "Consent failed");
     }
   }
@@ -60,32 +71,76 @@ function ConsentForm() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Authorize application</h1>
-      <p className="text-sm text-zinc-600">
-        <strong>{params.get("client_id")}</strong> requests access with scopes:{" "}
-        <code>{params.get("scope")}</code>
-      </p>
-      <form className="flex gap-3" onSubmit={onApprove}>
-        <button className="rounded bg-zinc-900 px-3 py-2 text-white" type="submit">
-          Allow
-        </button>
-        <button
-          className="rounded border px-3 py-2"
-          type="button"
-          onClick={() => void decide("deny")}
-        >
-          Deny
-        </button>
-      </form>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-    </main>
+    <EditorialShell
+      label="OAuth 2.0"
+      left={
+        <>
+          <div>
+            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted">
+              Authorization
+            </p>
+            <h1 className="text-perforated mt-4 font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-6xl">
+              Authorize application
+            </h1>
+            <p className="mt-6 max-w-md text-base text-muted">
+              <span className="text-ink">{clientId}</span> requests access to
+              your Noirly Identity account.
+            </p>
+            <div className="mt-8 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-hairline font-mono text-[10px] tracking-[0.14em] uppercase">
+              App
+            </div>
+          </div>
+          <p className="font-mono text-[10px] tracking-[0.12em] break-all uppercase text-muted">
+            {redirectUri}
+          </p>
+        </>
+      }
+      right={
+        <>
+          <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-panel-ink/55">
+            Requested scopes
+          </p>
+          <ul className="flex flex-col">
+            {(scopes.length ? scopes : ["openid"]).map((scope, index) => (
+              <li
+                key={scope}
+                className="flex items-baseline justify-between gap-4 border-b border-dashed border-panel-ink/25 py-4"
+              >
+                <DotMatrixNumeral className="text-2xl">
+                  {String(index + 1).padStart(2, "0")}
+                </DotMatrixNumeral>
+                <span className="font-mono text-sm tracking-[0.08em] uppercase">
+                  {scope}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={onApprove}>
+            <ActionButton className="flex-1" type="submit">
+              Allow
+            </ActionButton>
+            <ActionButton
+              className="flex-1"
+              type="button"
+              outline
+              onClick={() => void decide("deny")}
+            >
+              Deny
+            </ActionButton>
+          </form>
+          {error ? <Notice>{error}</Notice> : null}
+          <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-panel-ink/45">
+            client_id {clientId}
+          </p>
+        </>
+      }
+    />
   );
 }
 
 export default function ConsentPage() {
   return (
-    <Suspense fallback={<main className="p-8">Loading...</main>}>
+    <Suspense fallback={<ScreenFallback title="Loading" />}>
       <ConsentForm />
     </Suspense>
   );

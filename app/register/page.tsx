@@ -2,13 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-
-async function getCsrf(): Promise<string> {
-  const res = await fetch("/api/auth/csrf", { credentials: "include" });
-  const data = (await res.json()) as { csrfToken: string };
-  return data.csrfToken;
-}
+import { getCsrf } from "@/lib/auth/csrf-client";
+import { EditorialShell, Notice } from "@/components/identity/EditorialShell";
+import { Field } from "@/components/identity/Field";
+import { ActionButton, GoogleButton, TextLink } from "@/components/identity/Buttons";
+import { OrDivider } from "@/components/identity/OrDivider";
+import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -53,38 +52,62 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Create Noirly account</h1>
-      {googleEnabled ? (
+    <EditorialShell
+      label="Register"
+      navRightHref="/login"
+      navRightLabel="Sign in"
+      left={
         <>
-          <a
-            className="flex items-center justify-center rounded border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-50"
-            href="/api/auth/google"
-          >
-            Continue with Google
-          </a>
-          <p className="text-center text-xs uppercase tracking-wide text-zinc-500">or</p>
+          <div>
+            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted">
+              Provision
+            </p>
+            <h1 className="text-perforated mt-4 font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-7xl">
+              Create Noirly account
+            </h1>
+            <p className="mt-6 max-w-md text-base text-muted">
+              One Noirly identity across Flow, CRM, Docs, and the rest of the
+              ecosystem.
+            </p>
+          </div>
+          <DotMatrixNumeral className="text-7xl md:text-8xl">01</DotMatrixNumeral>
         </>
-      ) : null}
-      <form className="flex flex-col gap-3" onSubmit={onSubmit}>
-        <input className="rounded border px-3 py-2" name="firstName" placeholder="First name" required />
-        <input className="rounded border px-3 py-2" name="lastName" placeholder="Last name" required />
-        <input className="rounded border px-3 py-2" name="email" type="email" placeholder="Email" required />
-        <input
-          className="rounded border px-3 py-2"
-          name="password"
-          type="password"
-          placeholder="Password"
-          required
-        />
-        <button className="rounded bg-zinc-900 px-3 py-2 text-white" type="submit">
-          Register
-        </button>
-      </form>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      <p className="text-sm text-zinc-600">
-        Already have an account? <Link href="/login">Sign in</Link>
-      </p>
-    </main>
+      }
+      right={
+        <>
+          {googleEnabled ? (
+            <>
+              <GoogleButton />
+              <OrDivider />
+            </>
+          ) : null}
+          <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+            <Field label="First name" name="firstName" placeholder="Ada" required autoComplete="given-name" />
+            <Field label="Last name" name="lastName" placeholder="Lovelace" required autoComplete="family-name" />
+            <Field
+              label="Email"
+              name="email"
+              type="email"
+              placeholder="you@noirly.com"
+              required
+              autoComplete="email"
+            />
+            <Field
+              label="Password"
+              name="password"
+              type="password"
+              placeholder="••••••••••"
+              required
+              autoComplete="new-password"
+            />
+            <ActionButton type="submit">Register</ActionButton>
+          </form>
+          {error ? <Notice>{error}</Notice> : null}
+          <TextLink href="/login" tone="panel">
+            Already have an account? Sign in
+          </TextLink>
+        </>
+      }
+    />
   );
 }

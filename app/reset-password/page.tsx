@@ -2,57 +2,111 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { Field } from "@/components/identity/Field";
+import { ActionButton, TextLink } from "@/components/identity/Buttons";
+import { DotMatrixClock } from "@/components/identity/DotMatrix";
 
 function ResetForm() {
   const params = useSearchParams();
-  const [token, setToken] = useState(params.get("token") ?? "");
+  const tokenFromQuery = params.get("token") ?? "";
+  const [token, setToken] = useState(tokenFromQuery);
   const [message, setMessage] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setMessage(null);
     const form = new FormData(event.currentTarget);
+    const newPassword = String(form.get("newPassword") ?? "");
+    const confirm = String(form.get("confirmPassword") ?? "");
+    if (newPassword !== confirm) {
+      setOk(false);
+      setMessage("Passwords do not match");
+      return;
+    }
     const res = await fetch("/api/auth/reset-password", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         token,
-        newPassword: form.get("newPassword"),
+        newPassword,
       }),
     });
     const data = (await res.json()) as { message?: string };
+    setOk(res.ok);
     setMessage(res.ok ? "Password updated" : data.message || "Reset failed");
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Reset password</h1>
-      <form className="flex flex-col gap-3" onSubmit={onSubmit}>
-        <input
-          className="rounded border px-3 py-2"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          placeholder="Reset token"
-          required
-        />
-        <input
-          className="rounded border px-3 py-2"
-          name="newPassword"
-          type="password"
-          placeholder="New password"
-          required
-        />
-        <button className="rounded bg-zinc-900 px-3 py-2 text-white" type="submit">
-          Reset password
-        </button>
-      </form>
-      {message ? <p className="text-sm">{message}</p> : null}
-    </main>
+    <EditorialShell
+      label="Security"
+      navRightHref="/login"
+      navRightLabel="Sign in"
+      left={
+        <>
+          <div>
+            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted">
+              Credentials
+            </p>
+            <h1 className="text-perforated mt-4 font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-7xl">
+              Reset password
+            </h1>
+            <p className="mt-6 max-w-md text-base text-muted">
+              Choose a new password for your Noirly account.
+            </p>
+          </div>
+          <DotMatrixClock className="text-5xl md:text-7xl" />
+        </>
+      }
+      right={
+        <>
+          <form className="flex flex-col gap-6" onSubmit={onSubmit}>
+            {!tokenFromQuery ? (
+              <Field
+                label="Reset token"
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                required
+              />
+            ) : null}
+            <Field
+              label="New password"
+              name="newPassword"
+              type="password"
+              placeholder="••••••••••"
+              required
+              autoComplete="new-password"
+            />
+            <Field
+              label="Confirm password"
+              name="confirmPassword"
+              type="password"
+              placeholder="••••••••••"
+              required
+              autoComplete="new-password"
+            />
+            <ActionButton type="submit">Reset password</ActionButton>
+          </form>
+          {message ? <Notice>{message}</Notice> : null}
+          {ok ? (
+            <TextLink href="/login" tone="panel">
+              Continue to sign in
+            </TextLink>
+          ) : (
+            <TextLink href="/login" tone="panel">
+              Back to sign in
+            </TextLink>
+          )}
+        </>
+      }
+    />
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<main className="p-8">Loading...</main>}>
+    <Suspense fallback={<ScreenFallback title="Loading" />}>
       <ResetForm />
     </Suspense>
   );

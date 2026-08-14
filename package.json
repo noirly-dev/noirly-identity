@@ -12,6 +12,7 @@
     "test:watch": "vitest --config vitest.config.mts",
     "env:generate": "tsx scripts/generate-env.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "client:register": "tsx scripts/register-client.ts",
     "email:test": "tsx scripts/test-smtp.ts"
   },
   "dependencies": {
