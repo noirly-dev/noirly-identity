@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Noirly Identity
 
-## Getting Started
+Central authentication and OpenID Connect (OIDC) provider for the Noirly application ecosystem.
 
-First, run the development server:
+One Noirly account authenticates users across future products (CRM, Flow, Docs, Atlas, and more) using standard **OAuth 2.0 Authorization Code + PKCE** and **OpenID Connect**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```text
+                    Noirly Identity
+                    auth.noirly.com
+                          |
+          +---------------+---------------+
+          |               |               |
+          v               v               v
+      Noirly CRM      Noirly Flow     Noirly Docs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js (App Router) + TypeScript
+- MongoDB + Mongoose
+- Argon2id password hashing
+- Jose (RS256 ID tokens / JWKS)
+- Zod request validation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Quick start
 
-## Learn More
+```bash
+npm install
+npm run env:generate          # creates .env.local with RSA keys + secrets
+# start MongoDB locally, then:
+npm run db:seed               # test user + NoirlyCRM OAuth client
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Useful scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Script | Purpose |
+| --- | --- |
+| `npm run dev` | Start Identity locally |
+| `npm run env:generate` | Generate `.env.local` secrets + RS256 keys |
+| `npm run db:seed` | Seed test user + NoirlyCRM client |
+| `npm test` | Run security-critical tests |
+| `npm run typecheck` | TypeScript check |
+| `npm run lint` | ESLint |
+| `npm run build` | Production build |
 
-## Deploy on Vercel
+## Architecture overview
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Concern | Location |
+| --- | --- |
+| Auth APIs | `app/api/auth/*` |
+| OAuth endpoints | `app/api/oauth/*` |
+| OIDC endpoints | `app/api/oidc/*`, `app/.well-known/*` |
+| Domain logic | `lib/auth`, `lib/oauth`, `lib/oidc`, `lib/sessions`, `lib/tokens` |
+| Models | `models/*` |
+| Validation | `lib/validation/schemas.ts` |
+| Email abstraction | `lib/email` |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Sessions for the Identity UI use **HTTP-only cookies** (hashed at rest). Access tokens for APIs are **opaque** and stored hashed. ID tokens are **RS256 JWTs**.
+
+## API surface
+
+### Auth (cookie session)
+
+- `GET /api/auth/csrf`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `PATCH /api/auth/me`
+- `POST /api/auth/change-password`
+- `POST /api/auth/verify-email`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
+
+Cookie-authenticated mutating routes require `X-CSRF-Token` matching the `noirly_csrf` cookie.
+
+### OAuth / OIDC
+
+- `GET /api/oauth/authorize`
+- `POST /api/oauth/consent`
+- `POST /api/oauth/token`
+- `POST /api/oauth/revoke`
+- `GET /api/oidc/userinfo`
+- `GET /api/oidc/logout`
+- `GET /.well-known/openid-configuration`
+- `GET /.well-known/jwks.json`
+
+## Integrating a Noirly application
+
+See **[docs/INTEGRATION.md](docs/INTEGRATION.md)** for the full guide (client registration, PKCE, token exchange, UserInfo, logout, refresh rotation, errors).
+
+High-level flow:
+
+```text
+NoirlyCRM
+   |
+   | GET /api/oauth/authorize  (+ PKCE, state, nonce)
+   v
+Noirly Identity  (login + consent)
+   |
+   | redirect ?code=&state=
+   v
+NoirlyCRM
+   |
+   | POST /api/oauth/token
+   v
+access_token + id_token (+ refresh_token if offline_access)
+```
+
+## Security
+
+See **[docs/SECURITY.md](docs/SECURITY.md)**.
+
+Highlights:
+
+- Argon2id for passwords and confidential client secrets
+- Exact redirect URI matching (no open redirects)
+- PKCE (S256), state, nonce
+- Short-lived single-use authorization codes
+- Refresh token rotation + reuse detection
+- Session revocation on logout / password change
+- Rate limiting and login lockout
+- No secrets in logs
+
+## Organizations (prepared)
+
+Models `Organization` and `OrganizationMembership` (`owner` | `admin` | `member`) are present for future multi-tenant features. Product-specific authorization should live in each app, using Identity only as the authN source of truth.
+
+## License
+
+Private — Noirly.

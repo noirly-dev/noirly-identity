@@ -1,0 +1,201 @@
+import { createHash } from "node:crypto";
+import { AppError } from "@/lib/api/errors";
+import { normalizeEmail, toPublicUser } from "@/lib/auth/user-mapper";
+import { getEnv } from "@/lib/config/env";
+import { generateSecureToken } from "@/lib/security/crypto";
+import { createSession } from "@/lib/sessions/session-service";
+import { LinkedAccount } from "@/models/LinkedAccount";
+import { User } from "@/models/User";
+import type { PublicUser } from "@/types";
+
+export type GoogleProfile = {
+  sub: string;
+  email: string;
+  emailVerified: boolean;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+export function isGoogleOAuthConfigured(): boolean {
+  const env = getEnv();
+  return Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+}
+
+export function googleCallbackUrl(): string {
+  return `${getEnv().APP_URL.replace(/\/$/, "")}/api/auth/google/callback`;
+}
+
+export function buildGoogleAuthorizationUrl(input: {
+  state: string;
+  nonce: string;
+  codeChallenge: string;
+}): string {
+  const env = getEnv();
+  if (!env.GOOGLE_CLIENT_ID) {
+    throw new AppError("Google sign-in is not configured", 501, "google_not_configured");
+  }
+
+  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", env.GOOGLE_CLIENT_ID);
+  url.searchParams.set("redirect_uri", googleCallbackUrl());
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "openid email profile");
+  url.searchParams.set("state", input.state);
+  url.searchParams.set("nonce", input.nonce);
+  url.searchParams.set("code_challenge", input.codeChallenge);
+  url.searchParams.set("code_challenge_method", "S256");
+  url.searchParams.set("prompt", "select_account");
+  return url.toString();
+}
+
+export function pkceChallengeS256(verifier: string): string {
+  return createHash("sha256").update(verifier).digest("base64url");
+}
+
+export async function exchangeGoogleCode(input: {
+  code: string;
+  codeVerifier: string;
+}): Promise<GoogleProfile> {
+  const env = getEnv();
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    throw new AppError("Google sign-in is not configured", 501, "google_not_configured");
+  }
+
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code: input.code,
+    redirect_uri: googleCallbackUrl(),
+    client_id: env.GOOGLE_CLIENT_ID,
+    client_secret: env.GOOGLE_CLIENT_SECRET,
+    code_verifier: input.codeVerifier,
+  });
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  if (!tokenRes.ok) {
+    throw new AppError("Google sign-in failed", 401, "google_auth_failed");
+  }
+
+  const tokens = (await tokenRes.json()) as { access_token?: string };
+  if (!tokens.access_token) {
+    throw new AppError("Google sign-in failed", 401, "google_auth_failed");
+  }
+
+  const profileRes = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+    headers: { authorization: `Bearer ${tokens.access_token}` },
+  });
+
+  if (!profileRes.ok) {
+    throw new AppError("Google sign-in failed", 401, "google_auth_failed");
+  }
+
+  const profile = (await profileRes.json()) as {
+    sub?: string;
+    email?: string;
+    email_verified?: boolean;
+    given_name?: string;
+    family_name?: string;
+    name?: string;
+    picture?: string;
+  };
+
+  if (!profile.sub || !profile.email || profile.email_verified !== true) {
+    throw new AppError("Google account email is not verified", 400, "google_email_unverified");
+  }
+
+  const email = normalizeEmail(profile.email);
+  const firstName = profile.given_name?.trim() || email.split("@")[0] || "Noirly";
+  const lastName = profile.family_name?.trim() || "User";
+  const displayName = profile.name?.trim() || `${firstName} ${lastName}`.trim();
+
+  return {
+    sub: profile.sub,
+    email,
+    emailVerified: true,
+    firstName,
+    lastName,
+    displayName,
+    avatarUrl: profile.picture ?? null,
+  };
+}
+
+export async function loginWithGoogleProfile(
+  profile: GoogleProfile,
+  meta: { ipAddress?: string | null; userAgent?: string | null },
+): Promise<{ user: PublicUser; sessionToken: string }> {
+  const linked = await LinkedAccount.findOne({
+    provider: "google",
+    providerAccountId: profile.sub,
+  });
+
+  let user = linked ? await User.findById(linked.userId) : null;
+
+  if (!user) {
+    user = await User.findOne({ email: profile.email });
+    if (user) {
+      if (user.status === "disabled") {
+        throw new AppError("Unable to sign in", 401, "invalid_credentials");
+      }
+      await LinkedAccount.create({
+        userId: user._id,
+        provider: "google",
+        providerAccountId: profile.sub,
+      });
+    }
+  }
+
+  if (!user) {
+    user = await User.create({
+      email: profile.email,
+      passwordHash: null,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      emailVerified: true,
+      status: "active",
+      roles: ["user"],
+    });
+    await LinkedAccount.create({
+      userId: user._id,
+      provider: "google",
+      providerAccountId: profile.sub,
+    });
+  }
+
+  if (user.status === "disabled") {
+    throw new AppError("Unable to sign in", 401, "invalid_credentials");
+  }
+
+  user.emailVerified = true;
+  if (user.status === "pending_verification") {
+    user.status = "active";
+  }
+  if (!user.avatarUrl && profile.avatarUrl) {
+    user.avatarUrl = profile.avatarUrl;
+  }
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  const { token } = await createSession({
+    userId: user._id,
+    ipAddress: meta.ipAddress,
+    userAgent: meta.userAgent,
+  });
+
+  return { user: toPublicUser(user), sessionToken: token };
+}
+
+export function newGoogleOAuthSecrets() {
+  return {
+    state: generateSecureToken(24),
+    codeVerifier: generateSecureToken(32),
+    nonce: generateSecureToken(16),
+  };
+}
