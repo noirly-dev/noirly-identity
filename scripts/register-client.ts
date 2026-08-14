@@ -25,6 +25,13 @@ function optionalArg(name: string): string | undefined {
   return found ? found.slice(prefix.length) : undefined;
 }
 
+function csv(value: string): string[] {
+  return value
+    .split(/[,\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function upsertEnvValue(filePath: string, key: string, value: string) {
   const current = readFileSync(filePath, "utf8");
   const next = current.includes(`${key}=`)
@@ -41,43 +48,62 @@ async function main() {
 
   const clientId = arg("client-id");
   const name = arg("name", clientId);
-  const redirectUri = arg("redirect-uri");
-  const postLogout = arg("post-logout", new URL("/", redirectUri).origin + "/");
+  const redirectUris = csv(arg("redirect-uri"));
+  const postLogoutRedirectUris = csv(
+    optionalArg("post-logout") ??
+      [...new Set(redirectUris.map((item) => new URL("/", item).origin + "/"))].join(","),
+  );
+  const extraDbs = csv(optionalArg("also-db") ?? "test,noirly-identity");
   const writeEnv = optionalArg("write-env");
 
   await mongoose.connect(uri);
-
+  const connectedDb = mongoose.connection.name;
   const clientSecret = generateSecureToken(32);
+  const fields = {
+    clientSecretHash: await hashPassword(clientSecret),
+    name,
+    description: `Confidential OAuth client for ${name}`,
+    redirectUris,
+    postLogoutRedirectUris,
+    allowedScopes: ["openid", "profile", "email", "offline_access", "roles"],
+    clientType: "confidential",
+    status: "active",
+    requirePkce: true,
+    requireConsent: false,
+  };
+
   await OAuthClient.findOneAndUpdate(
     { clientId },
-    {
-      $set: {
-        clientSecretHash: await hashPassword(clientSecret),
-        name,
-        description: `Confidential OAuth client for ${name}`,
-        redirectUris: [redirectUri],
-        postLogoutRedirectUris: [postLogout],
-        allowedScopes: ["openid", "profile", "email", "offline_access", "roles"],
-        clientType: "confidential",
-        status: "active",
-        requirePkce: true,
-        requireConsent: false,
-      },
-      $setOnInsert: { clientId },
-    },
+    { $set: fields, $setOnInsert: { clientId } },
     { upsert: true, new: true },
   );
 
+  const written = new Set<string>([connectedDb]);
+  const mongo = mongoose.connection.getClient();
+  for (const dbName of extraDbs) {
+    if (written.has(dbName)) continue;
+    await mongo.db(dbName).collection("oauthclients").updateOne(
+      { clientId },
+      {
+        $set: { ...fields, clientId },
+        $setOnInsert: { createdAt: new Date() },
+      },
+      { upsert: true },
+    );
+    written.add(dbName);
+  }
+
+  console.log("Registered OAuth client");
+  console.log("  client_id:", clientId);
+  console.log("  databases:", [...written].join(", "));
+  console.log("  redirect_uris:", redirectUris.join(", "));
+  console.log("  post_logout_redirect_uris:", postLogoutRedirectUris.join(", "));
   if (writeEnv) {
     upsertEnvValue(resolve(writeEnv), "AUTH_NOIRLY_CLIENT_ID", clientId);
     upsertEnvValue(resolve(writeEnv), "AUTH_NOIRLY_CLIENT_SECRET", clientSecret);
-    console.log(`Registered ${clientId} and wrote credentials to ${writeEnv}`);
+    console.log(`  wrote credentials to ${writeEnv}`);
   } else {
-    console.log("Registered OAuth client");
-    console.log("  client_id:", clientId);
     console.log("  client_secret:", clientSecret);
-    console.log("  redirect_uri:", redirectUri);
-    console.log("  post_logout_redirect_uri:", postLogout);
   }
 
   await mongoose.disconnect();
