@@ -134,10 +134,12 @@ export async function loginWithGoogleProfile(
     providerAccountId: profile.sub,
   });
 
-  let user = linked ? await User.findById(linked.userId) : null;
+  let user = linked
+    ? await User.findById(linked.userId).select("+passwordHash")
+    : null;
 
   if (!user) {
-    user = await User.findOne({ email: profile.email });
+    user = await User.findOne({ email: profile.email }).select("+passwordHash");
     if (user) {
       if (user.status === "disabled") {
         throw new AppError("Unable to sign in", 401, "invalid_credentials");

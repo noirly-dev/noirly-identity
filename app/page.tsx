@@ -6,16 +6,17 @@ import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 const endpoints = [
   { href: "/login", index: "01", title: "Login", copy: "Access the secure portal." },
   { href: "/register", index: "02", title: "Register", copy: "Provision a new identity token." },
-  { href: "/check-email", index: "03", title: "Check email", copy: "Complete verification." },
+  { href: "/account", index: "03", title: "Account", copy: "Profile, password, and session." },
+  { href: "/check-email", index: "04", title: "Check email", copy: "Complete verification." },
   {
     href: "/.well-known/openid-configuration",
-    index: "04",
+    index: "05",
     title: "OpenID configuration",
     copy: "/.well-known/openid-configuration",
   },
   {
     href: "/.well-known/jwks.json",
-    index: "05",
+    index: "06",
     title: "JWKS",
     copy: "/.well-known/jwks.json",
   },

@@ -156,7 +156,7 @@ export async function getCurrentUser(
   if (!ctx) {
     return null;
   }
-  const user = await User.findById(ctx.userId);
+  const user = await User.findById(ctx.userId).select("+passwordHash");
   if (!user || user.status === "disabled") {
     return null;
   }
@@ -172,7 +172,7 @@ export async function updateUserProfile(
     throw new AppError("Authentication required", 401, "unauthorized");
   }
 
-  const user = await User.findById(ctx.userId);
+  const user = await User.findById(ctx.userId).select("+passwordHash");
   if (!user || user.status === "disabled") {
     throw new AppError("Authentication required", 401, "unauthorized");
   }

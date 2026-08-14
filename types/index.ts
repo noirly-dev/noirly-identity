@@ -32,6 +32,7 @@ export type PublicUser = {
   displayName: string;
   avatarUrl: string | null;
   phoneNumber: string | null;
+  hasPassword: boolean;
   status: UserStatus;
   roles: UserRole[];
   createdAt: string;

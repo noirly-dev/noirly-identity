@@ -11,6 +11,7 @@ export function toPublicUser(user: UserDocument): PublicUser {
     displayName: user.displayName,
     avatarUrl: user.avatarUrl ?? null,
     phoneNumber: user.phoneNumber ?? null,
+    hasPassword: Boolean(user.passwordHash),
     status: user.status,
     roles: user.roles as PublicUser["roles"],
     createdAt: user.createdAt.toISOString(),
