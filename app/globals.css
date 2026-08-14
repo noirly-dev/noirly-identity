@@ -78,3 +78,17 @@ button:disabled,
   border-style: dashed;
   border-width: 1px;
 }
+
+.busy-dots {
+  animation: busy-pulse 1.05s ease-in-out infinite;
+}
+
+@keyframes busy-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}

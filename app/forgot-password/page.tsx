@@ -1,28 +1,34 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { EditorialShell, Notice } from "@/components/identity/EditorialShell";
+import { EditorialShell, BusyOverlay, Notice } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, TextLink } from "@/components/identity/Buttons";
 import { DotMatrixClock } from "@/components/identity/DotMatrix";
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const res = await fetch("/api/auth/forgot-password", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: form.get("email") }),
-    });
-    const data = (await res.json()) as { message?: string };
-    setMessage(
-      res.ok
-        ? "If an account exists, a reset email has been sent."
-        : data.message || "Unable to send reset email",
-    );
+    setSubmitting(true);
+    try {
+      const form = new FormData(event.currentTarget);
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: form.get("email") }),
+      });
+      const data = (await res.json()) as { message?: string };
+      setMessage(
+        res.ok
+          ? "If an account exists, a reset email has been sent."
+          : data.message || "Unable to send reset email",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -49,6 +55,7 @@ export default function ForgotPasswordPage() {
       }
       right={
         <>
+          {submitting ? <BusyOverlay label="Sending reset link" /> : null}
           <form className="flex flex-col gap-6" onSubmit={onSubmit}>
             <Field
               label="Email"
@@ -58,7 +65,9 @@ export default function ForgotPasswordPage() {
               required
               autoComplete="email"
             />
-            <ActionButton type="submit">Send reset link</ActionButton>
+            <ActionButton type="submit" busy={submitting} busyLabel="Sending">
+              Send reset link
+            </ActionButton>
           </form>
           {message ? <Notice>{message}</Notice> : null}
           <TextLink href="/login" tone="panel">

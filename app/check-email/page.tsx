@@ -2,7 +2,7 @@
 
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, TextLink } from "@/components/identity/Buttons";
 import { withReturnTo } from "@/lib/auth/return-to";
@@ -115,6 +115,7 @@ function CheckEmailContent() {
       }
       right={
         <>
+          {sending ? <BusyOverlay label="Sending verification email" /> : null}
           <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-panel-ink/55">
             Didn&apos;t receive it?
           </p>
@@ -129,12 +130,10 @@ function CheckEmailContent() {
                 required
               />
             ) : null}
-            <ActionButton type="submit" disabled={sending || cooldown > 0}>
+            <ActionButton type="submit" busy={sending} disabled={cooldown > 0} busyLabel="Sending">
               {cooldown > 0
                 ? `Resend available in ${cooldown}s`
-                : sending
-                  ? "Sending"
-                  : "Resend verification email"}
+                : "Resend verification email"}
             </ActionButton>
           </form>
           {message ? <Notice>{message}</Notice> : null}

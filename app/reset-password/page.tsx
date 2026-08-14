@@ -2,7 +2,7 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, TextLink } from "@/components/identity/Buttons";
 import { DotMatrixClock } from "@/components/identity/DotMatrix";
@@ -13,6 +13,7 @@ function ResetForm() {
   const [token, setToken] = useState(tokenFromQuery);
   const [message, setMessage] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,17 +26,22 @@ function ResetForm() {
       setMessage("Passwords do not match");
       return;
     }
-    const res = await fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        token,
-        newPassword,
-      }),
-    });
-    const data = (await res.json()) as { message?: string };
-    setOk(res.ok);
-    setMessage(res.ok ? "Password updated" : data.message || "Reset failed");
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          token,
+          newPassword,
+        }),
+      });
+      const data = (await res.json()) as { message?: string };
+      setOk(res.ok);
+      setMessage(res.ok ? "Password updated" : data.message || "Reset failed");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -61,6 +67,7 @@ function ResetForm() {
       }
       right={
         <>
+          {submitting ? <BusyOverlay label="Updating password" /> : null}
           <form className="flex flex-col gap-6" onSubmit={onSubmit}>
             {!tokenFromQuery ? (
               <Field
@@ -86,7 +93,9 @@ function ResetForm() {
               required
               autoComplete="new-password"
             />
-            <ActionButton type="submit">Reset password</ActionButton>
+            <ActionButton type="submit" busy={submitting} busyLabel="Updating">
+              Reset password
+            </ActionButton>
           </form>
           {message ? <Notice>{message}</Notice> : null}
           {ok ? (

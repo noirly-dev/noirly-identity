@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { getEnv } from "@/lib/config/env";
+import { resolveMongoDbName } from "@/lib/db/uri";
 
 type MongooseCache = {
   conn: typeof mongoose | null;
@@ -24,8 +25,10 @@ export async function connectMongo(): Promise<typeof mongoose> {
 
   if (!cache.promise) {
     const uri = getEnv().MONGODB_URI;
+    const dbName = resolveMongoDbName(uri, "noirly-identity");
     cache.promise = mongoose.connect(uri, {
       bufferCommands: false,
+      ...(dbName ? { dbName } : {}),
     });
   }
 

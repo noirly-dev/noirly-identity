@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getCsrf } from "@/lib/auth/csrf-client";
 import { goReturnTo, withReturnTo } from "@/lib/auth/return-to";
-import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, GoogleButton, TextLink } from "@/components/identity/Buttons";
 import { OrDivider } from "@/components/identity/OrDivider";
@@ -17,6 +17,7 @@ function LoginForm() {
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [csrf, setCsrf] = useState("");
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     void getCsrf().then(setCsrf);
@@ -30,33 +31,40 @@ function LoginForm() {
     event.preventDefault();
     setError(null);
     setUnverifiedEmail(null);
+    setSubmitting(true);
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "");
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "content-type": "application/json",
-        "x-csrf-token": csrf,
-      },
-      body: JSON.stringify({
-        email,
-        password: form.get("password"),
-      }),
-    });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string; error?: string };
-      if (data.error === "email_not_verified") {
-        setUnverifiedEmail(email.trim().toLowerCase());
-        setError(
-          data.message ?? "Please verify your email address before signing in.",
-        );
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": csrf,
+        },
+        body: JSON.stringify({
+          email,
+          password: form.get("password"),
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { message?: string; error?: string };
+        if (data.error === "email_not_verified") {
+          setUnverifiedEmail(email.trim().toLowerCase());
+          setError(
+            data.message ?? "Please verify your email address before signing in.",
+          );
+        } else {
+          setError(data.message ?? "Login failed");
+        }
+        setSubmitting(false);
         return;
       }
-      setError(data.message ?? "Login failed");
-      return;
+      goReturnTo(returnTo);
+    } catch {
+      setError("Login failed");
+      setSubmitting(false);
     }
-    goReturnTo(returnTo);
   }
 
   return (
@@ -79,6 +87,7 @@ function LoginForm() {
       }
       right={
         <>
+          {submitting ? <BusyOverlay label="Signing in" /> : null}
           {googleEnabled ? (
             <>
               <GoogleButton returnTo={returnTo} />
@@ -102,7 +111,9 @@ function LoginForm() {
               required
               autoComplete="current-password"
             />
-            <ActionButton type="submit">Sign in</ActionButton>
+            <ActionButton type="submit" busy={submitting} busyLabel="Signing in">
+              Sign in
+            </ActionButton>
           </form>
           {error ? <Notice>{error}</Notice> : null}
           {unverifiedEmail ? (

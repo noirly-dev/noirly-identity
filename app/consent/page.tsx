@@ -3,7 +3,7 @@
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getCsrf } from "@/lib/auth/csrf-client";
-import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { ActionButton } from "@/components/identity/Buttons";
 import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
@@ -11,6 +11,7 @@ function ConsentForm() {
   const params = useSearchParams();
   const [csrf, setCsrf] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"approve" | "deny" | null>(null);
   const clientId = params.get("client_id") ?? "unknown-client";
   const redirectUri = params.get("redirect_uri") ?? "";
   const scopes = useMemo(
@@ -28,40 +29,47 @@ function ConsentForm() {
 
   async function decide(decision: "approve" | "deny") {
     setError(null);
-    const res = await fetch("/api/oauth/consent", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "content-type": "application/json",
-        "x-csrf-token": csrf,
-      },
-      body: JSON.stringify({
-        client_id: params.get("client_id"),
-        redirect_uri: params.get("redirect_uri"),
-        scope: params.get("scope"),
-        state: params.get("state"),
-        code_challenge: params.get("code_challenge") || undefined,
-        code_challenge_method: params.get("code_challenge_method") || undefined,
-        nonce: params.get("nonce") || undefined,
-        decision,
-      }),
-      redirect: "manual",
-    });
+    setBusy(decision);
+    try {
+      const res = await fetch("/api/oauth/consent", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": csrf,
+        },
+        body: JSON.stringify({
+          client_id: params.get("client_id"),
+          redirect_uri: params.get("redirect_uri"),
+          scope: params.get("scope"),
+          state: params.get("state"),
+          code_challenge: params.get("code_challenge") || undefined,
+          code_challenge_method: params.get("code_challenge_method") || undefined,
+          nonce: params.get("nonce") || undefined,
+          decision,
+        }),
+        redirect: "manual",
+      });
 
-    if (res.status >= 300 && res.status < 400) {
-      const location = res.headers.get("location");
-      if (location) {
-        window.location.href = location;
-        return;
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get("location");
+        if (location) {
+          window.location.href = location;
+          return;
+        }
       }
-    }
 
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as {
-        message?: string;
-        error_description?: string;
-      };
-      setError(data.error_description || data.message || "Consent failed");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          error_description?: string;
+        };
+        setError(data.error_description || data.message || "Consent failed");
+        setBusy(null);
+      }
+    } catch {
+      setError("Consent failed");
+      setBusy(null);
     }
   }
 
@@ -97,6 +105,9 @@ function ConsentForm() {
       }
       right={
         <>
+          {busy ? (
+            <BusyOverlay label={busy === "approve" ? "Allowing access" : "Denying access"} />
+          ) : null}
           <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-panel-ink/55">
             Requested scopes
           </p>
@@ -116,13 +127,22 @@ function ConsentForm() {
             ))}
           </ul>
           <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={onApprove}>
-            <ActionButton className="flex-1" type="submit">
+            <ActionButton
+              className="flex-1"
+              type="submit"
+              busy={busy === "approve"}
+              busyLabel="Allowing"
+              disabled={busy !== null}
+            >
               Allow
             </ActionButton>
             <ActionButton
               className="flex-1"
               type="button"
               outline
+              busy={busy === "deny"}
+              busyLabel="Denying"
+              disabled={busy !== null}
               onClick={() => void decide("deny")}
             >
               Deny

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import mongoose from "mongoose";
 import { generateSecureToken } from "../lib/security/crypto";
 import { hashPassword } from "../lib/security/password";
+import { resolveMongoDbName } from "../lib/db/uri";
 import { OAuthClient } from "../models/OAuthClient";
 import { User } from "../models/User";
 
@@ -41,7 +42,8 @@ async function main() {
     throw new Error("MONGODB_URI is required. Run npm run env:generate first.");
   }
 
-  await mongoose.connect(uri);
+  const dbName = resolveMongoDbName(uri, "noirly-identity");
+  await mongoose.connect(uri, dbName ? { dbName } : undefined);
 
   const email = "dev@noirly.test";
   const password = "NoirlyDev1!";

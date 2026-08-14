@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import mongoose from "mongoose";
 import { generateSecureToken } from "../lib/security/crypto";
 import { hashPassword } from "../lib/security/password";
+import { resolveMongoDbName } from "../lib/db/uri";
 import { OAuthClient } from "../models/OAuthClient";
 
 config({ path: resolve(process.cwd(), ".env.local") });
@@ -53,10 +54,11 @@ async function main() {
     optionalArg("post-logout") ??
       [...new Set(redirectUris.map((item) => new URL("/", item).origin + "/"))].join(","),
   );
-  const extraDbs = csv(optionalArg("also-db") ?? "test,noirly-identity");
+  const extraDbs = csv(optionalArg("also-db") ?? "");
   const writeEnv = optionalArg("write-env");
 
-  await mongoose.connect(uri);
+  const dbName = resolveMongoDbName(uri, "noirly-identity");
+  await mongoose.connect(uri, dbName ? { dbName } : undefined);
   const connectedDb = mongoose.connection.name;
   const clientSecret = generateSecureToken(32);
   const fields = {
@@ -80,9 +82,9 @@ async function main() {
 
   const written = new Set<string>([connectedDb]);
   const mongo = mongoose.connection.getClient();
-  for (const dbName of extraDbs) {
-    if (written.has(dbName)) continue;
-    await mongo.db(dbName).collection("oauthclients").updateOne(
+  for (const extraDb of extraDbs) {
+    if (written.has(extraDb)) continue;
+    await mongo.db(extraDb).collection("oauthclients").updateOne(
       { clientId },
       {
         $set: { ...fields, clientId },
@@ -90,7 +92,7 @@ async function main() {
       },
       { upsert: true },
     );
-    written.add(dbName);
+    written.add(extraDb);
   }
 
   console.log("Registered OAuth client");

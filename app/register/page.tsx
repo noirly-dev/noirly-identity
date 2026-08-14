@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCsrf } from "@/lib/auth/csrf-client";
 import { withReturnTo } from "@/lib/auth/return-to";
-import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, GoogleButton, TextLink } from "@/components/identity/Buttons";
 import { OrDivider } from "@/components/identity/OrDivider";
@@ -17,6 +17,7 @@ function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [csrf, setCsrf] = useState("");
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     void getCsrf().then(setCsrf);
@@ -29,34 +30,40 @@ function RegisterForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSubmitting(true);
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "");
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "content-type": "application/json",
-        "x-csrf-token": csrf,
-      },
-      body: JSON.stringify({
-        email,
-        password: form.get("password"),
-        firstName: form.get("firstName"),
-        lastName: form.get("lastName"),
-      }),
-    });
-    if (!res.ok) {
-      const data = (await res.json()) as { message?: string };
-      setError(data.message ?? "Registration failed");
-      return;
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": csrf,
+        },
+        body: JSON.stringify({
+          email,
+          password: form.get("password"),
+          firstName: form.get("firstName"),
+          lastName: form.get("lastName"),
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { message?: string };
+        setError(data.message ?? "Registration failed");
+        setSubmitting(false);
+        return;
+      }
+      router.push(
+        withReturnTo(
+          `/check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`,
+          returnTo,
+        ),
+      );
+    } catch {
+      setError("Registration failed");
+      setSubmitting(false);
     }
-    router.push(
-      withReturnTo(
-        `/check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`,
-        returnTo,
-      ),
-    );
-    router.refresh();
   }
 
   return (
@@ -83,6 +90,7 @@ function RegisterForm() {
       }
       right={
         <>
+          {submitting ? <BusyOverlay label="Creating account" /> : null}
           {googleEnabled ? (
             <>
               <GoogleButton returnTo={returnTo} />
@@ -108,7 +116,9 @@ function RegisterForm() {
               required
               autoComplete="new-password"
             />
-            <ActionButton type="submit">Register</ActionButton>
+            <ActionButton type="submit" busy={submitting} busyLabel="Creating account">
+              Register
+            </ActionButton>
           </form>
           {error ? <Notice>{error}</Notice> : null}
           <TextLink href={withReturnTo("/login", returnTo)} tone="panel">

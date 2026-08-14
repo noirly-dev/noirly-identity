@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { BusyOverlay } from "@/components/identity/EditorialShell";
 
 type Tone = "canvas" | "panel";
 
@@ -21,16 +24,26 @@ export function ActionButton({
   tone = "panel",
   outline = false,
   className = "",
+  busy = false,
+  busyLabel,
+  disabled,
+  children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   tone?: Tone;
   outline?: boolean;
+  busy?: boolean;
+  busyLabel?: string;
 }) {
   return (
     <button
-      className={`${base} ${invertClasses(tone, outline)} ${className}`}
       {...props}
-    />
+      className={`${base} ${invertClasses(tone, outline)} ${className}`}
+      disabled={disabled || busy}
+      aria-busy={busy}
+    >
+      {busy ? (busyLabel ?? "Working") : children}
+    </button>
   );
 }
 
@@ -69,16 +82,22 @@ export function GoogleButton({
   returnTo?: string | null;
   tone?: Tone;
 }) {
+  const [busy, setBusy] = useState(false);
   const href = returnTo
     ? `/api/auth/google?return_to=${encodeURIComponent(returnTo)}`
     : "/api/auth/google";
   return (
-    <a
-      href={href}
-      className={`${base} w-full ${invertClasses(tone, true)}`}
-    >
-      Continue with Google
-    </a>
+    <>
+      {busy ? <BusyOverlay label="Continuing with Google" /> : null}
+      <a
+        href={href}
+        className={`${base} w-full ${invertClasses(tone, true)}`}
+        aria-busy={busy}
+        onClick={() => setBusy(true)}
+      >
+        {busy ? "Redirecting" : "Continue with Google"}
+      </a>
+    </>
   );
 }
 
