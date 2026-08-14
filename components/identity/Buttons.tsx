@@ -15,7 +15,7 @@ function invertClasses(tone: Tone, outline: boolean): string {
 }
 
 const base =
-  "inline-flex items-center justify-center px-4 py-3 font-mono text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors disabled:opacity-40";
+  "inline-flex cursor-pointer items-center justify-center px-4 py-3 font-mono text-[11px] font-semibold tracking-[0.16em] uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-40";
 
 export function ActionButton({
   tone = "panel",
