@@ -1,16 +1,19 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getCsrf } from "@/lib/auth/csrf-client";
-import { EditorialShell, Notice } from "@/components/identity/EditorialShell";
+import { withReturnTo } from "@/lib/auth/return-to";
+import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, GoogleButton, TextLink } from "@/components/identity/Buttons";
 import { OrDivider } from "@/components/identity/OrDivider";
 import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("return_to");
   const [error, setError] = useState<string | null>(null);
   const [csrf, setCsrf] = useState("");
   const [googleEnabled, setGoogleEnabled] = useState(false);
@@ -47,14 +50,19 @@ export default function RegisterPage() {
       setError(data.message ?? "Registration failed");
       return;
     }
-    router.push(`/check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+    router.push(
+      withReturnTo(
+        `/check-email?email=${encodeURIComponent(email.trim().toLowerCase())}`,
+        returnTo,
+      ),
+    );
     router.refresh();
   }
 
   return (
     <EditorialShell
       label="Register"
-      navRightHref="/login"
+      navRightHref={withReturnTo("/login", returnTo)}
       navRightLabel="Sign in"
       left={
         <>
@@ -77,7 +85,7 @@ export default function RegisterPage() {
         <>
           {googleEnabled ? (
             <>
-              <GoogleButton />
+              <GoogleButton returnTo={returnTo} />
               <OrDivider />
             </>
           ) : null}
@@ -103,11 +111,19 @@ export default function RegisterPage() {
             <ActionButton type="submit">Register</ActionButton>
           </form>
           {error ? <Notice>{error}</Notice> : null}
-          <TextLink href="/login" tone="panel">
+          <TextLink href={withReturnTo("/login", returnTo)} tone="panel">
             Already have an account? Sign in
           </TextLink>
         </>
       }
     />
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<ScreenFallback title="Loading" />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { TopNav } from "@/components/identity/TopNav";
 import { VerticalLabel } from "@/components/identity/VerticalLabel";
 import { ActionLink } from "@/components/identity/Buttons";
+import { readOauthReturnCookie, sanitizeReturnTo } from "@/lib/auth/return-to";
 import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 import { ScreenFallback } from "@/components/identity/EditorialShell";
 
@@ -112,6 +113,8 @@ function VerifyContent() {
   const token = params.get("token");
   const [status, setStatus] = useState<VerifyStatus>(token ? "loading" : "missing");
   const started = useRef(false);
+  const resumeTo =
+    sanitizeReturnTo(params.get("return_to")) ?? readOauthReturnCookie();
 
   useEffect(() => {
     if (!token || started.current) {
@@ -143,6 +146,15 @@ function VerifyContent() {
     })();
   }, [token]);
 
+  useEffect(() => {
+    if (
+      (status === "verified" || status === "already_verified") &&
+      resumeTo
+    ) {
+      window.location.assign(resumeTo);
+    }
+  }, [status, resumeTo]);
+
   if (status === "loading") {
     return (
       <VerifyFrame
@@ -156,13 +168,22 @@ function VerifyContent() {
   }
 
   const view = copy[status];
+  const continueHref =
+    (status === "verified" || status === "already_verified") && resumeTo
+      ? resumeTo
+      : view.href;
+
   return (
     <VerifyFrame
       title={view.title}
-      body={view.body}
+      body={
+        continueHref !== view.href
+          ? `${view.body} Continue to return to the app that sent you here.`
+          : view.body
+      }
       code={view.code}
-      cta={view.cta}
-      href={view.href}
+      cta={continueHref !== view.href ? "Continue to app" : view.cta}
+      href={continueHref}
     />
   );
 }

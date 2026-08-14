@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, TextLink } from "@/components/identity/Buttons";
+import { withReturnTo } from "@/lib/auth/return-to";
 import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
 function maskEmail(email: string): string {
@@ -17,6 +18,7 @@ function maskEmail(email: string): string {
 function CheckEmailContent() {
   const params = useSearchParams();
   const emailFromQuery = params.get("email") ?? "";
+  const returnTo = params.get("return_to");
   const [email, setEmail] = useState(emailFromQuery);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ function CheckEmailContent() {
   return (
     <EditorialShell
       label="Verify"
-      navRightHref="/login"
+      navRightHref={withReturnTo("/login", returnTo)}
       navRightLabel="Sign in"
       left={
         <>
@@ -103,6 +105,7 @@ function CheckEmailContent() {
                 "."
               )}{" "}
               Click the button in the email to verify your account.
+              After that you will return to the app that sent you here.
             </p>
           </div>
           <DotMatrixNumeral className="text-7xl md:text-9xl">
@@ -136,7 +139,7 @@ function CheckEmailContent() {
           </form>
           {message ? <Notice>{message}</Notice> : null}
           {error ? <Notice>{error}</Notice> : null}
-          <TextLink href="/login" tone="panel">
+          <TextLink href={withReturnTo("/login", returnTo)} tone="panel">
             Already verified? Sign in
           </TextLink>
         </>

@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { getCsrf } from "@/lib/auth/csrf-client";
+import { goReturnTo, withReturnTo } from "@/lib/auth/return-to";
 import { EditorialShell, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, GoogleButton, TextLink } from "@/components/identity/Buttons";
@@ -10,7 +11,6 @@ import { OrDivider } from "@/components/identity/OrDivider";
 import { DotMatrixClock } from "@/components/identity/DotMatrix";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("return_to");
   const [error, setError] = useState<string | null>(searchParams.get("error"));
@@ -56,14 +56,13 @@ function LoginForm() {
       setError(data.message ?? "Login failed");
       return;
     }
-    router.push(returnTo || "/");
-    router.refresh();
+    goReturnTo(returnTo);
   }
 
   return (
     <EditorialShell
       label="Session"
-      navRightHref="/register"
+      navRightHref={withReturnTo("/register", returnTo)}
       navRightLabel="Register"
       left={
         <>
@@ -108,7 +107,10 @@ function LoginForm() {
           {error ? <Notice>{error}</Notice> : null}
           {unverifiedEmail ? (
             <TextLink
-              href={`/check-email?email=${encodeURIComponent(unverifiedEmail)}`}
+              href={withReturnTo(
+                `/check-email?email=${encodeURIComponent(unverifiedEmail)}`,
+                returnTo,
+              )}
               tone="panel"
             >
               Resend verification email
@@ -118,7 +120,7 @@ function LoginForm() {
             <TextLink href="/forgot-password" tone="panel">
               Forgot password?
             </TextLink>
-            <TextLink href="/register" tone="panel">
+            <TextLink href={withReturnTo("/register", returnTo)} tone="panel">
               No account? Register
             </TextLink>
           </div>

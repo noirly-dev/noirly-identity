@@ -47,11 +47,16 @@ export function ActionLink({
   className?: string;
   children: ReactNode;
 }) {
+  const classNameFull = `${base} ${invertClasses(tone, outline)} ${className}`;
+  if (href.startsWith("/api/") || href.startsWith("http://") || href.startsWith("https://")) {
+    return (
+      <a href={href} className={classNameFull}>
+        {children}
+      </a>
+    );
+  }
   return (
-    <Link
-      href={href}
-      className={`${base} ${invertClasses(tone, outline)} ${className}`}
-    >
+    <Link href={href} className={classNameFull}>
       {children}
     </Link>
   );

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { errorResponse, oauthRedirectError } from "@/lib/api/errors";
 import { withDb } from "@/lib/api/with-db";
-import { getEnv } from "@/lib/config/env";
+import { getEnv, isProduction } from "@/lib/config/env";
 import {
   createAuthorizationCode,
   validateAuthorizeRequest,
@@ -69,7 +69,19 @@ export async function GET(request: NextRequest) {
           );
         }
         return applySecurityHeaders(
-          NextResponse.redirect(buildLoginRedirect(request.nextUrl.toString())),
+          (() => {
+            const response = NextResponse.redirect(
+              buildLoginRedirect(request.nextUrl.toString()),
+            );
+            response.cookies.set("noirly_oauth_return", request.nextUrl.toString(), {
+              httpOnly: false,
+              sameSite: "lax",
+              secure: isProduction(),
+              path: "/",
+              maxAge: 60 * 60,
+            });
+            return response;
+          })(),
         );
       }
 
