@@ -11,10 +11,11 @@ import { getSessionTokenFromCookies } from "@/lib/security/cookies";
 import { validateSession } from "@/lib/sessions/session-service";
 import { authorizeQuerySchema } from "@/lib/validation/schemas";
 
-function buildLoginRedirect(requestUrl: string): string {
+function buildLoginRedirect(requestUrl: string, popup: boolean): string {
   const env = getEnv();
   const login = new URL("/login", env.APP_URL);
   login.searchParams.set("return_to", requestUrl);
+  if (popup) login.searchParams.set("popup", "1");
   return login.toString();
 }
 
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const params = parsed.data;
+      const { display, ...params } = parsed.data;
 
       let validated;
       try {
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
         return applySecurityHeaders(
           (() => {
             const response = NextResponse.redirect(
-              buildLoginRedirect(request.nextUrl.toString()),
+              buildLoginRedirect(request.nextUrl.toString(), display === "popup"),
             );
             response.cookies.set("noirly_oauth_return", request.nextUrl.toString(), {
               httpOnly: false,

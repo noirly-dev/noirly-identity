@@ -39,10 +39,12 @@ export async function GET(request: NextRequest) {
       exp: Date.now() + 10 * 60 * 1000,
     });
 
+    const loginHint = request.nextUrl.searchParams.get("login_hint")?.trim() || undefined;
     const authorizeUrl = buildGoogleAuthorizationUrl({
       state: secrets.state,
       nonce: secrets.nonce,
       codeChallenge: pkceChallengeS256(secrets.codeVerifier),
+      loginHint,
     });
 
     const response = applySecurityHeaders(NextResponse.redirect(authorizeUrl));

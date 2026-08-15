@@ -3,10 +3,17 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCsrf } from "@/lib/auth/csrf-client";
-import { withReturnTo } from "@/lib/auth/return-to";
-import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
+import { withPopup, withReturnTo } from "@/lib/auth/return-to";
+import {
+  EditorialShell,
+  PopupAuthShell,
+  BusyOverlay,
+  Notice,
+  ScreenFallback,
+} from "@/components/identity/EditorialShell";
 import { Field } from "@/components/identity/Field";
 import { ActionButton, GoogleButton, TextLink } from "@/components/identity/Buttons";
+import { GoogleOneTap } from "@/components/identity/GoogleOneTap";
 import { OrDivider } from "@/components/identity/OrDivider";
 import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
@@ -14,16 +21,21 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("return_to");
+  const compact = searchParams.get("popup") === "1";
   const [error, setError] = useState<string | null>(null);
   const [csrf, setCsrf] = useState("");
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleClientId, setGoogleClientId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     void getCsrf().then(setCsrf);
     void fetch("/api/auth/oauth-providers")
-      .then((res) => res.json() as Promise<{ google?: boolean }>)
-      .then((data) => setGoogleEnabled(Boolean(data.google)))
+      .then((res) => res.json() as Promise<{ google?: boolean; googleClientId?: string | null }>)
+      .then((data) => {
+        setGoogleEnabled(Boolean(data.google));
+        setGoogleClientId(data.googleClientId ?? null);
+      })
       .catch(() => undefined);
   }, []);
 
@@ -66,10 +78,73 @@ function RegisterForm() {
     }
   }
 
+  const loginHref = withPopup(withReturnTo("/login", returnTo), compact);
+  const panel = (
+    <>
+      {submitting ? <BusyOverlay label="Creating account" /> : null}
+      {googleEnabled && googleClientId ? (
+        <>
+          <GoogleOneTap
+            clientId={googleClientId}
+            returnTo={returnTo}
+            context="signup"
+            popup={compact}
+          />
+          <OrDivider />
+        </>
+      ) : googleEnabled ? (
+        <>
+          <GoogleButton returnTo={returnTo} />
+          <OrDivider />
+        </>
+      ) : null}
+      <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+        <Field label="First name" name="firstName" placeholder="Ada" required autoComplete="given-name" />
+        <Field label="Last name" name="lastName" placeholder="Lovelace" required autoComplete="family-name" />
+        <Field
+          label="Email"
+          name="email"
+          type="email"
+          placeholder="you@noirly.com"
+          required
+          autoComplete="email"
+        />
+        <Field
+          label="Password"
+          name="password"
+          type="password"
+          placeholder="••••••••••"
+          required
+          autoComplete="new-password"
+        />
+        <ActionButton type="submit" busy={submitting} busyLabel="Creating account">
+          Register
+        </ActionButton>
+      </form>
+      {error ? <Notice>{error}</Notice> : null}
+      <TextLink href={loginHref} tone="panel">
+        Already have an account? Sign in
+      </TextLink>
+    </>
+  );
+
+  if (compact) {
+    return (
+      <PopupAuthShell
+        eyebrow="Provision"
+        title="Create account"
+        navRightHref={loginHref}
+        navRightLabel="Sign in"
+      >
+        {panel}
+      </PopupAuthShell>
+    );
+  }
+
   return (
     <EditorialShell
       label="Register"
-      navRightHref={withReturnTo("/login", returnTo)}
+      navRightHref={loginHref}
       navRightLabel="Sign in"
       left={
         <>
@@ -88,44 +163,7 @@ function RegisterForm() {
           <DotMatrixNumeral className="text-7xl md:text-8xl">01</DotMatrixNumeral>
         </>
       }
-      right={
-        <>
-          {submitting ? <BusyOverlay label="Creating account" /> : null}
-          {googleEnabled ? (
-            <>
-              <GoogleButton returnTo={returnTo} />
-              <OrDivider />
-            </>
-          ) : null}
-          <form className="flex flex-col gap-5" onSubmit={onSubmit}>
-            <Field label="First name" name="firstName" placeholder="Ada" required autoComplete="given-name" />
-            <Field label="Last name" name="lastName" placeholder="Lovelace" required autoComplete="family-name" />
-            <Field
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="you@noirly.com"
-              required
-              autoComplete="email"
-            />
-            <Field
-              label="Password"
-              name="password"
-              type="password"
-              placeholder="••••••••••"
-              required
-              autoComplete="new-password"
-            />
-            <ActionButton type="submit" busy={submitting} busyLabel="Creating account">
-              Register
-            </ActionButton>
-          </form>
-          {error ? <Notice>{error}</Notice> : null}
-          <TextLink href={withReturnTo("/login", returnTo)} tone="panel">
-            Already have an account? Sign in
-          </TextLink>
-        </>
-      }
+      right={panel}
     />
   );
 }

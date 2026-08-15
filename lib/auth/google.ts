@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { AppError } from "@/lib/api/errors";
 import { normalizeEmail, toPublicUser } from "@/lib/auth/user-mapper";
 import { getEnv } from "@/lib/config/env";
@@ -31,6 +32,7 @@ export function buildGoogleAuthorizationUrl(input: {
   state: string;
   nonce: string;
   codeChallenge: string;
+  loginHint?: string;
 }): string {
   const env = getEnv();
   if (!env.GOOGLE_CLIENT_ID) {
@@ -47,6 +49,9 @@ export function buildGoogleAuthorizationUrl(input: {
   url.searchParams.set("code_challenge", input.codeChallenge);
   url.searchParams.set("code_challenge_method", "S256");
   url.searchParams.set("prompt", "select_account");
+  if (input.loginHint) {
+    url.searchParams.set("login_hint", input.loginHint);
+  }
   return url.toString();
 }
 
@@ -200,4 +205,76 @@ export function newGoogleOAuthSecrets() {
     codeVerifier: generateSecureToken(32),
     nonce: generateSecureToken(16),
   };
+}
+
+const GOOGLE_JWKS = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/oauth2/v3/certs"),
+);
+
+export function googleProfileFromIdTokenClaims(claims: {
+  sub?: unknown;
+  email?: unknown;
+  email_verified?: unknown;
+  given_name?: unknown;
+  family_name?: unknown;
+  name?: unknown;
+  picture?: unknown;
+}): GoogleProfile {
+  const sub = typeof claims.sub === "string" ? claims.sub : "";
+  const email =
+    typeof claims.email === "string" ? normalizeEmail(claims.email) : "";
+  const emailVerified =
+    claims.email_verified === true || claims.email_verified === "true";
+  if (!sub || !email || !emailVerified) {
+    throw new AppError("Google account email is not verified", 400, "google_email_unverified");
+  }
+  const firstName =
+    (typeof claims.given_name === "string" && claims.given_name.trim()) ||
+    email.split("@")[0] ||
+    "Noirly";
+  const lastName =
+    (typeof claims.family_name === "string" && claims.family_name.trim()) || "User";
+  const displayName =
+    (typeof claims.name === "string" && claims.name.trim()) ||
+    `${firstName} ${lastName}`.trim();
+  return {
+    sub,
+    email,
+    emailVerified: true,
+    firstName,
+    lastName,
+    displayName,
+    avatarUrl: typeof claims.picture === "string" ? claims.picture : null,
+  };
+}
+
+export async function verifyGoogleIdToken(input: {
+  credential: string;
+  nonce?: string | null;
+}): Promise<GoogleProfile> {
+  const env = getEnv();
+  if (!env.GOOGLE_CLIENT_ID) {
+    throw new AppError("Google sign-in is not configured", 501, "google_not_configured");
+  }
+
+  let payload;
+  try {
+    const verified = await jwtVerify(input.credential, GOOGLE_JWKS, {
+      issuer: ["https://accounts.google.com", "accounts.google.com"],
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+    payload = verified.payload;
+  } catch {
+    throw new AppError("Google sign-in failed", 401, "google_auth_failed");
+  }
+
+  if (
+    input.nonce &&
+    typeof payload.nonce === "string" &&
+    payload.nonce !== input.nonce
+  ) {
+    throw new AppError("Google sign-in failed", 401, "google_auth_failed");
+  }
+
+  return googleProfileFromIdTokenClaims(payload);
 }

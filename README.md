@@ -83,7 +83,13 @@ Cookie-authenticated mutating routes require `X-CSRF-Token` matching the `noirly
 - `POST /api/admin/clients` — create or add origins for any Noirly app
 - `PATCH /api/admin/clients/:clientId` — add origins, rotate secret, enable/disable
 
-UI: sign in as an admin and open `/clients`.
+UI: sign in as an admin and open `/clients`. Grant admin with:
+
+```bash
+npm run user:promote-admin -- --email=you@example.com
+```
+
+That writes to the MongoDB in Identity’s `MONGODB_URI` (local `.env.local` for local, Atlas for production).
 
 ### OAuth / OIDC
 

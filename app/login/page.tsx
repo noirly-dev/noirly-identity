@@ -2,13 +2,13 @@ import { redirect } from "next/navigation";
 import { LoginPageClient } from "@/app/login/LoginForm";
 import { withDb } from "@/lib/api/with-db";
 import { getCurrentUser } from "@/lib/auth/auth-service";
-import { sanitizeReturnTo } from "@/lib/auth/return-to";
+import { isPopupLogin, sanitizeReturnTo } from "@/lib/auth/return-to";
 import { getSessionTokenFromCookies } from "@/lib/security/cookies";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ return_to?: string }>;
+  searchParams: Promise<{ return_to?: string; popup?: string }>;
 }) {
   const params = await searchParams;
   const user = await withDb(async () => {
@@ -20,5 +20,5 @@ export default async function LoginPage({
     redirect(sanitizeReturnTo(params.return_to) ?? "/account");
   }
 
-  return <LoginPageClient />;
+  return <LoginPageClient popup={isPopupLogin(params.popup)} />;
 }

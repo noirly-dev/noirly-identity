@@ -9,6 +9,19 @@ export function withReturnTo(path: string, returnTo: string | null | undefined):
   return qs ? `${pathname}?${qs}` : pathname;
 }
 
+export function withPopup(path: string, popup: boolean): string {
+  if (!popup) return path;
+  const [pathname, search = ""] = path.split("?");
+  const params = new URLSearchParams(search);
+  params.set("popup", "1");
+  const qs = params.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
+export function isPopupLogin(candidate?: string | null): boolean {
+  return candidate === "1" || candidate === "popup";
+}
+
 export function sanitizeReturnTo(
   candidate: string | null | undefined,
   origin?: string,

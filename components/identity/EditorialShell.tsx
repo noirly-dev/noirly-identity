@@ -42,6 +42,37 @@ export function EditorialShell({
   );
 }
 
+export function PopupAuthShell({
+  eyebrow,
+  title,
+  navRightHref,
+  navRightLabel,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  navRightHref?: string;
+  navRightLabel?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-full flex-1 flex-col bg-panel text-panel-ink">
+      <TopNav rightHref={navRightHref} rightLabel={navRightLabel} />
+      <div className="flex flex-1 flex-col gap-6 px-5 py-8">
+        <div>
+          <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-panel-ink/55">
+            {eyebrow}
+          </p>
+          <h1 className="mt-3 font-display text-4xl leading-[0.9] font-bold tracking-[-0.05em] uppercase">
+            {title}
+          </h1>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function ScreenFallback({ title }: { title: string }) {
   return (
     <div className="flex min-h-full flex-1 flex-col">

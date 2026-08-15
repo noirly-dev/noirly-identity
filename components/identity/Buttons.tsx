@@ -77,15 +77,19 @@ export function ActionLink({
 
 export function GoogleButton({
   returnTo,
+  loginHint,
   tone = "panel",
 }: {
   returnTo?: string | null;
+  loginHint?: string | null;
   tone?: Tone;
 }) {
   const [busy, setBusy] = useState(false);
-  const href = returnTo
-    ? `/api/auth/google?return_to=${encodeURIComponent(returnTo)}`
-    : "/api/auth/google";
+  const params = new URLSearchParams();
+  if (returnTo) params.set("return_to", returnTo);
+  if (loginHint) params.set("login_hint", loginHint);
+  const qs = params.toString();
+  const href = qs ? `/api/auth/google?${qs}` : "/api/auth/google";
   return (
     <>
       {busy ? <BusyOverlay label="Continuing with Google" /> : null}

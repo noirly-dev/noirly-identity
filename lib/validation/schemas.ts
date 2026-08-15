@@ -72,6 +72,7 @@ export const authorizeQuerySchema = z.object({
   code_challenge_method: z.enum(["S256"]).optional(),
   nonce: z.string().min(1).optional(),
   prompt: z.enum(["none", "login", "consent"]).optional(),
+  display: z.enum(["page", "popup"]).optional(),
 });
 
 export const tokenBodySchema = z.discriminatedUnion("grant_type", [
