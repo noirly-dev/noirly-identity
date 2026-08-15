@@ -92,6 +92,53 @@ export const tokenBodySchema = z.discriminatedUnion("grant_type", [
   }),
 ]);
 
+export const oauthClientIdSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(
+    /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/,
+    "client_id must be lowercase letters, numbers, and hyphens",
+  );
+
+export const oauthCallbackPathSchema = z
+  .string()
+  .trim()
+  .regex(
+    /^\/[A-Za-z0-9/_-]*$/,
+    "callback path must be an absolute path like /api/auth/callback/noirly",
+  )
+  .default("/api/auth/callback/noirly");
+
+export const registerOAuthClientSchema = z.object({
+  clientId: oauthClientIdSchema,
+  name: z.string().trim().min(1).max(120),
+  origins: z.array(z.string().trim().min(1)).min(1).max(20),
+  callbackPath: oauthCallbackPathSchema.optional(),
+  requireConsent: z.boolean().optional(),
+});
+
+export const updateOAuthClientSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    origins: z.array(z.string().trim().min(1)).min(1).max(20).optional(),
+    callbackPath: oauthCallbackPathSchema.optional(),
+    rotateSecret: z.boolean().optional(),
+    status: z.enum(["active", "disabled"]).optional(),
+    requireConsent: z.boolean().optional(),
+  })
+  .refine(
+    (value) =>
+      Boolean(
+        value.name ||
+          value.origins ||
+          value.rotateSecret ||
+          value.status ||
+          value.requireConsent !== undefined,
+      ),
+    { message: "No client updates provided" },
+  );
+
 export const consentSchema = z.object({
   client_id: z.string().min(1),
   redirect_uri: z.string().url(),

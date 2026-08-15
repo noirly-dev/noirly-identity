@@ -23,6 +23,21 @@ export type Scope = (typeof SUPPORTED_SCOPES)[number];
 
 export const INITIAL_SCOPES = ["openid", "profile", "email"] as const;
 
+export type PublicOAuthClient = {
+  clientId: string;
+  name: string;
+  description: string;
+  status: ClientStatus;
+  clientType: ClientType;
+  redirectUris: string[];
+  postLogoutRedirectUris: string[];
+  allowedScopes: string[];
+  requirePkce: boolean;
+  requireConsent: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PublicUser = {
   id: string;
   email: string;

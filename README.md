@@ -77,6 +77,14 @@ Sessions for the Identity UI use **HTTP-only cookies** (hashed at rest). Access 
 
 Cookie-authenticated mutating routes require `X-CSRF-Token` matching the `noirly_csrf` cookie.
 
+### Admin (cookie session, `admin` role)
+
+- `GET /api/admin/clients`
+- `POST /api/admin/clients` — create or add origins for any Noirly app
+- `PATCH /api/admin/clients/:clientId` — add origins, rotate secret, enable/disable
+
+UI: sign in as an admin and open `/clients`.
+
 ### OAuth / OIDC
 
 - `GET /api/oauth/authorize`

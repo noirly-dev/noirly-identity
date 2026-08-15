@@ -13,6 +13,7 @@ export async function createTestUser(overrides?: {
   email?: string;
   password?: string;
   status?: "active" | "disabled" | "pending_verification";
+  roles?: Array<"user" | "admin">;
 }) {
   const password = overrides?.password ?? "StrongPass1!";
   const status = overrides?.status ?? "active";
@@ -24,7 +25,7 @@ export async function createTestUser(overrides?: {
     displayName: "Test User",
     emailVerified: status === "active",
     status,
-    roles: ["user"],
+    roles: overrides?.roles ?? ["user"],
     lastLoginAt: new Date(),
   });
   return { user, password };

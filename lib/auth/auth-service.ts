@@ -163,6 +163,19 @@ export async function getCurrentUser(
   return toPublicUser(user);
 }
 
+export async function requireAdminUser(
+  sessionToken: string | null,
+): Promise<PublicUser> {
+  const user = await getCurrentUser(sessionToken);
+  if (!user) {
+    throw new AppError("Authentication required", 401, "unauthorized");
+  }
+  if (!user.roles.includes("admin")) {
+    throw new AppError("Admin access required", 403, "forbidden");
+  }
+  return user;
+}
+
 export async function updateUserProfile(
   sessionToken: string | null,
   input: UpdateProfileInput,

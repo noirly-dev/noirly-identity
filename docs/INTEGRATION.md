@@ -17,7 +17,16 @@ This guide shows how a future Noirly application (for example **NoirlyCRM** or *
 
 ## 1. Register an OAuth client
 
-Clients are stored in MongoDB (`OAuthClient`). For local development:
+Clients are stored in MongoDB (`OAuthClient`). The production way is the **admin generator** in Identity:
+
+1. Sign in to Identity as an admin
+2. Open `/clients` (also linked from Account)
+3. Enter the app name, client id (`noirly-ledger`, `noirly-pulse`, …), and one origin per line (localhost + production)
+4. Copy the printed `AUTH_NOIRLY_*` values into that app’s env and redeploy
+
+Re-running the generator for an existing client **adds origins** and does not rotate the secret. Use **Rotate secret** only when you intend to invalidate the old one.
+
+CLI remains available for local/automation:
 
 ```bash
 npm run db:seed

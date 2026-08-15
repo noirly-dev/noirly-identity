@@ -172,6 +172,9 @@ export function AccountSettings({ initialUser }: Props) {
 
             <div className="flex flex-wrap items-center gap-4">
               <DotMatrixClock />
+              {user.roles.includes("admin") ? (
+                <TextLink href="/clients">OAuth clients</TextLink>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void onLogout()}

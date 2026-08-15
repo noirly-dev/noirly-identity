@@ -13,6 +13,7 @@
     "env:generate": "tsx scripts/generate-env.ts",
     "db:seed": "tsx scripts/seed.ts",
     "client:register": "tsx scripts/register-client.ts",
+    "client:ensure": "tsx scripts/ensure-oauth-client.ts",
     "client:list": "tsx scripts/list-clients.ts",
     "client:promote": "tsx scripts/promote-oauth-from-test.ts",
     "email:test": "tsx scripts/test-smtp.ts"
