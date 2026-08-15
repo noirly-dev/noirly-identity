@@ -22,7 +22,7 @@ export type AuthorizeParams = {
   code_challenge?: string;
   code_challenge_method?: "S256";
   nonce?: string;
-  prompt?: "none" | "login" | "consent";
+  prompt?: "none" | "login" | "consent" | "select_account";
 };
 
 export async function validateAuthorizeRequest(params: AuthorizeParams) {

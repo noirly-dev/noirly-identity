@@ -8,17 +8,28 @@ import { getSessionTokenFromCookies } from "@/lib/security/cookies";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ return_to?: string; popup?: string }>;
+  searchParams: Promise<{
+    return_to?: string;
+    popup?: string;
+    select_account?: string;
+  }>;
 }) {
   const params = await searchParams;
+  const selectAccount = params.select_account === "1";
   const user = await withDb(async () => {
     const token = await getSessionTokenFromCookies();
     return getCurrentUser(token);
   });
 
-  if (user) {
+  if (user && !selectAccount) {
     redirect(sanitizeReturnTo(params.return_to) ?? "/account");
   }
 
-  return <LoginPageClient popup={isPopupLogin(params.popup)} />;
+  return (
+    <LoginPageClient
+      popup={isPopupLogin(params.popup)}
+      currentEmail={user?.email ?? null}
+      selectAccount={selectAccount}
+    />
+  );
 }

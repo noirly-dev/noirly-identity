@@ -22,6 +22,23 @@ export function isPopupLogin(candidate?: string | null): boolean {
   return candidate === "1" || candidate === "popup";
 }
 
+export function stripAuthorizePrompt(candidate: string): string {
+  try {
+    const absolute =
+      candidate.startsWith("http://") || candidate.startsWith("https://");
+    const url = absolute
+      ? new URL(candidate)
+      : new URL(candidate, "https://noirly.invalid");
+    if (url.pathname === "/api/oauth/authorize") {
+      url.searchParams.delete("prompt");
+    }
+    if (absolute) return url.toString();
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return candidate;
+  }
+}
+
 export function sanitizeReturnTo(
   candidate: string | null | undefined,
   origin?: string,
@@ -63,5 +80,5 @@ export function readOauthReturnCookie(): string | null {
 export function goReturnTo(returnTo: string | null | undefined): void {
   const dest =
     sanitizeReturnTo(returnTo) ?? readOauthReturnCookie() ?? "/";
-  window.location.assign(dest);
+  window.location.assign(stripAuthorizePrompt(dest));
 }

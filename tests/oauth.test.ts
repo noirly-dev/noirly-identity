@@ -54,6 +54,19 @@ describe("oauth authorize validation", () => {
     expect(parsed.success).toBe(false);
   });
 
+  it("accepts select_account prompt", async () => {
+    const { authorizeQuerySchema } = await import("@/lib/validation/schemas");
+    const parsed = authorizeQuerySchema.safeParse({
+      client_id: "x",
+      redirect_uri: "http://localhost:3001/cb",
+      response_type: "code",
+      scope: "openid",
+      state: "abc",
+      prompt: "select_account",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
   it("rejects invalid scope", async () => {
     const { client } = await createTestClient({
       allowedScopes: ["openid", "profile", "email"],

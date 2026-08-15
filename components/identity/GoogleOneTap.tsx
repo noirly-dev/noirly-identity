@@ -76,6 +76,7 @@ type Props = {
   identityOrigin?: string;
   context?: "signin" | "signup" | "use";
   popup?: boolean;
+  autoPrompt?: boolean;
   onCredential?: (input: { credential: string; nonce: string }) => void;
 };
 
@@ -85,6 +86,7 @@ export function GoogleOneTap({
   identityOrigin,
   context = "signin",
   popup = false,
+  autoPrompt = true,
   onCredential,
 }: Props) {
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -139,7 +141,9 @@ export function GoogleOneTap({
           },
         });
         accounts.disableAutoSelect();
-        accounts.prompt();
+        if (autoPrompt) {
+          accounts.prompt();
+        }
         if (buttonRef.current) {
           buttonRef.current.innerHTML = "";
           accounts.renderButton(buttonRef.current, {
@@ -158,7 +162,7 @@ export function GoogleOneTap({
     return () => {
       cancelled = true;
     };
-  }, [clientId, context, identityOrigin, onCredential, popup, returnTo]);
+  }, [autoPrompt, clientId, context, identityOrigin, onCredential, popup, returnTo]);
 
   return (
     <div className="flex flex-col gap-3">

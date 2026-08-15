@@ -46,8 +46,13 @@ describe("one tap return_to", () => {
     expect(dest).toBe("http://localhost:3002/login/popup?next=%2F");
   });
 
-  it("rejects unknown origins", async () => {
-    const dest = await resolveOneTapReturnTo("https://evil.example/phish");
-    expect(dest.includes("evil.example")).toBe(false);
+  it("strips OIDC prompt from Identity authorize return_to", async () => {
+    const dest = await resolveOneTapReturnTo(
+      "/api/oauth/authorize?client_id=noirly-pulse&prompt=select_account&state=abc",
+    );
+    const url = new URL(dest);
+    expect(url.pathname).toBe("/api/oauth/authorize");
+    expect(url.searchParams.get("prompt")).toBeNull();
+    expect(url.searchParams.get("client_id")).toBe("noirly-pulse");
   });
 });

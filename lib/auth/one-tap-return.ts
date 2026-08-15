@@ -1,3 +1,4 @@
+import { stripAuthorizePrompt } from "@/lib/auth/return-to";
 import { getEnv } from "@/lib/config/env";
 import { OAuthClient } from "@/models/OAuthClient";
 
@@ -10,7 +11,7 @@ export async function resolveOneTapReturnTo(
   if (!candidate) return fallback;
 
   if (candidate.startsWith("/") && !candidate.startsWith("//")) {
-    return `${app}${candidate}`;
+    return `${app}${stripAuthorizePrompt(candidate)}`;
   }
 
   let url: URL;
@@ -25,7 +26,7 @@ export async function resolveOneTapReturnTo(
 
   const appOrigin = new URL(app).origin;
   if (url.origin === appOrigin) {
-    return url.toString();
+    return stripAuthorizePrompt(url.toString());
   }
 
   const clients = await OAuthClient.find({ status: "active" })
@@ -47,5 +48,5 @@ export async function resolveOneTapReturnTo(
   if (!url.pathname.startsWith("/") || url.pathname.startsWith("//")) {
     return fallback;
   }
-  return url.toString();
+  return stripAuthorizePrompt(url.toString());
 }

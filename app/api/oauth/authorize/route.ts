@@ -11,11 +11,16 @@ import { getSessionTokenFromCookies } from "@/lib/security/cookies";
 import { validateSession } from "@/lib/sessions/session-service";
 import { authorizeQuerySchema } from "@/lib/validation/schemas";
 
-function buildLoginRedirect(requestUrl: string, popup: boolean): string {
+function buildLoginRedirect(
+  requestUrl: string,
+  popup: boolean,
+  selectAccount: boolean,
+): string {
   const env = getEnv();
   const login = new URL("/login", env.APP_URL);
   login.searchParams.set("return_to", requestUrl);
   if (popup) login.searchParams.set("popup", "1");
+  if (selectAccount) login.searchParams.set("select_account", "1");
   return login.toString();
 }
 
@@ -59,20 +64,27 @@ export async function GET(request: NextRequest) {
 
       const sessionToken = await getSessionTokenFromCookies();
       const session = await validateSession(sessionToken);
+      const forceAccountPicker =
+        params.prompt === "login" || params.prompt === "select_account";
 
-      if (!session) {
-        if (params.prompt === "none") {
-          return oauthRedirectError(
-            params.redirect_uri,
-            "login_required",
-            "Authentication required",
-            params.state,
-          );
-        }
+      if (!session && params.prompt === "none") {
+        return oauthRedirectError(
+          params.redirect_uri,
+          "login_required",
+          "Authentication required",
+          params.state,
+        );
+      }
+
+      if (!session || forceAccountPicker) {
         return applySecurityHeaders(
           (() => {
             const response = NextResponse.redirect(
-              buildLoginRedirect(request.nextUrl.toString(), display === "popup"),
+              buildLoginRedirect(
+                request.nextUrl.toString(),
+                display === "popup",
+                forceAccountPicker,
+              ),
             );
             response.cookies.set("noirly_oauth_return", request.nextUrl.toString(), {
               httpOnly: false,

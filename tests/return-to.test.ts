@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeReturnTo, withPopup, withReturnTo } from "@/lib/auth/return-to";
+import { sanitizeReturnTo, stripAuthorizePrompt, withPopup, withReturnTo } from "@/lib/auth/return-to";
 
 describe("return_to helpers", () => {
   it("appends return_to without dropping existing query params", () => {
@@ -37,5 +37,15 @@ describe("return_to helpers", () => {
     ).toBe(
       "/register?return_to=%2Fapi%2Foauth%2Fauthorize%3Fclient_id%3Dnoirly-flow&popup=1",
     );
+  });
+
+  it("strips OIDC prompt after an account is chosen", () => {
+    const stripped = stripAuthorizePrompt(
+      "/api/oauth/authorize?client_id=noirly-pulse&prompt=select_account&state=abc",
+    );
+    const params = new URLSearchParams(stripped.split("?")[1]);
+    expect(params.get("prompt")).toBeNull();
+    expect(params.get("client_id")).toBe("noirly-pulse");
+    expect(params.get("state")).toBe("abc");
   });
 });

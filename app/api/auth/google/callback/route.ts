@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/api/request";
 import { withDb } from "@/lib/api/with-db";
 import { exchangeGoogleCode, loginWithGoogleProfile } from "@/lib/auth/google";
 import { readOAuthState } from "@/lib/auth/oauth-state";
+import { stripAuthorizePrompt } from "@/lib/auth/return-to";
 import { getEnv, isProduction } from "@/lib/config/env";
 import { setSessionCookie } from "@/lib/security/cookies";
 import { applySecurityHeaders } from "@/lib/security/headers";
@@ -52,7 +53,10 @@ export async function GET(request: NextRequest) {
         userAgent: request.headers.get("user-agent"),
       });
 
-      const redirectTo = new URL(payload.returnTo, env.APP_URL);
+      const redirectTo = new URL(
+        stripAuthorizePrompt(payload.returnTo),
+        env.APP_URL,
+      );
       const response = applySecurityHeaders(NextResponse.redirect(redirectTo));
       await setSessionCookie(response, result.sessionToken);
       response.cookies.set(GOOGLE_STATE_COOKIE, "", {
