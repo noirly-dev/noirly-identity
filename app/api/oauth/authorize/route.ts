@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { errorResponse, oauthRedirectError } from "@/lib/api/errors";
+import { readFormBody } from "@/lib/api/request";
 import { withDb } from "@/lib/api/with-db";
 import { getEnv, isProduction } from "@/lib/config/env";
 import {
   createAuthorizationCode,
   validateAuthorizeRequest,
 } from "@/lib/oauth/authorize";
-import { applySecurityHeaders } from "@/lib/security/headers";
+import { applySecurityHeaders, redirectGet } from "@/lib/security/headers";
 import { getSessionTokenFromCookies } from "@/lib/security/cookies";
 import { validateSession } from "@/lib/sessions/session-service";
 import { authorizeQuerySchema } from "@/lib/validation/schemas";
@@ -33,10 +34,31 @@ function buildConsentRedirect(params: URLSearchParams): string {
   return consent.toString();
 }
 
-export async function GET(request: NextRequest) {
+function authorizeUrlFromRequest(request: NextRequest): string {
+  const url = request.nextUrl.clone();
+  url.searchParams.delete("credential");
+  url.searchParams.delete("return_to");
+  return url.toString();
+}
+
+async function readAuthorizeInput(
+  request: NextRequest,
+): Promise<Record<string, string>> {
+  const fromQuery = Object.fromEntries(request.nextUrl.searchParams.entries());
+  if (fromQuery.client_id && fromQuery.response_type) {
+    return fromQuery;
+  }
+  if (request.method !== "POST") {
+    return fromQuery;
+  }
+  const form = await readFormBody(request);
+  return Object.fromEntries(form.entries());
+}
+
+async function handleAuthorize(request: NextRequest) {
   try {
     return await withDb(async () => {
-      const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+      const raw = await readAuthorizeInput(request);
       const parsed = authorizeQuerySchema.safeParse(raw);
 
       if (!parsed.success) {
@@ -66,6 +88,7 @@ export async function GET(request: NextRequest) {
       const session = await validateSession(sessionToken);
       const forceAccountPicker =
         params.prompt === "login" || params.prompt === "select_account";
+      const authorizeUrl = authorizeUrlFromRequest(request);
 
       if (!session && params.prompt === "none") {
         return oauthRedirectError(
@@ -77,25 +100,21 @@ export async function GET(request: NextRequest) {
       }
 
       if (!session || forceAccountPicker) {
-        return applySecurityHeaders(
-          (() => {
-            const response = NextResponse.redirect(
-              buildLoginRedirect(
-                request.nextUrl.toString(),
-                display === "popup",
-                forceAccountPicker,
-              ),
-            );
-            response.cookies.set("noirly_oauth_return", request.nextUrl.toString(), {
-              httpOnly: false,
-              sameSite: "lax",
-              secure: isProduction(),
-              path: "/",
-              maxAge: 60 * 60,
-            });
-            return response;
-          })(),
+        const response = redirectGet(
+          buildLoginRedirect(
+            authorizeUrl,
+            display === "popup",
+            forceAccountPicker,
+          ),
         );
+        response.cookies.set("noirly_oauth_return", authorizeUrl, {
+          httpOnly: false,
+          sameSite: "lax",
+          secure: isProduction(),
+          path: "/",
+          maxAge: 60 * 60,
+        });
+        return response;
       }
 
       const needsConsent =
@@ -110,11 +129,7 @@ export async function GET(request: NextRequest) {
             params.state,
           );
         }
-        return applySecurityHeaders(
-          NextResponse.redirect(
-            buildConsentRedirect(request.nextUrl.searchParams),
-          ),
-        );
+        return redirectGet(buildConsentRedirect(request.nextUrl.searchParams));
       }
 
       const { code } = await createAuthorizationCode({
@@ -130,9 +145,17 @@ export async function GET(request: NextRequest) {
       const redirect = new URL(params.redirect_uri);
       redirect.searchParams.set("code", code);
       redirect.searchParams.set("state", params.state);
-      return applySecurityHeaders(NextResponse.redirect(redirect));
+      return redirectGet(redirect);
     });
   } catch (error) {
     return errorResponse(error);
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleAuthorize(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleAuthorize(request);
 }

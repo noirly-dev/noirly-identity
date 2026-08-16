@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { errorResponse } from "@/lib/api/errors";
 import { enforceRateLimit } from "@/lib/api/request";
 import { withDb } from "@/lib/api/with-db";
@@ -7,7 +7,7 @@ import { readOAuthState } from "@/lib/auth/oauth-state";
 import { stripAuthorizePrompt } from "@/lib/auth/return-to";
 import { getEnv, isProduction } from "@/lib/config/env";
 import { setSessionCookie } from "@/lib/security/cookies";
-import { applySecurityHeaders } from "@/lib/security/headers";
+import { redirectGet } from "@/lib/security/headers";
 import { getClientIp } from "@/lib/security/rate-limit";
 import { safeEqualString } from "@/lib/security/crypto";
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       const loginError = (message: string) => {
         const url = new URL("/login", env.APP_URL);
         url.searchParams.set("error", message);
-        const response = applySecurityHeaders(NextResponse.redirect(url));
+        const response = redirectGet(url);
         response.cookies.set(GOOGLE_STATE_COOKIE, "", {
           httpOnly: true,
           secure: isProduction(),
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         stripAuthorizePrompt(payload.returnTo),
         env.APP_URL,
       );
-      const response = applySecurityHeaders(NextResponse.redirect(redirectTo));
+      const response = redirectGet(redirectTo);
       await setSessionCookie(response, result.sessionToken);
       response.cookies.set(GOOGLE_STATE_COOKIE, "", {
         httpOnly: true,

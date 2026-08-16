@@ -76,5 +76,5 @@ export function oauthRedirectError(
   if (state) {
     url.searchParams.set("state", state);
   }
-  return applySecurityHeaders(NextResponse.redirect(url));
+  return applySecurityHeaders(NextResponse.redirect(url, 303));
 }

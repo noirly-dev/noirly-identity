@@ -49,3 +49,11 @@ describe("return_to helpers", () => {
     expect(params.get("state")).toBe("abc");
   });
 });
+
+describe("oauth redirects", () => {
+  it("uses 303 so POST does not follow as POST", async () => {
+    const { redirectGet } = await import("@/lib/security/headers");
+    const res = redirectGet("https://example.com/api/oauth/authorize");
+    expect(res.status).toBe(303);
+  });
+});

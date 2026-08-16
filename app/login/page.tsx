@@ -3,6 +3,7 @@ import { LoginPageClient } from "@/app/login/LoginForm";
 import { withDb } from "@/lib/api/with-db";
 import { getCurrentUser } from "@/lib/auth/auth-service";
 import { isPopupLogin, sanitizeReturnTo } from "@/lib/auth/return-to";
+import { getEnv } from "@/lib/config/env";
 import { getSessionTokenFromCookies } from "@/lib/security/cookies";
 
 export default async function LoginPage({
@@ -22,7 +23,9 @@ export default async function LoginPage({
   });
 
   if (user && !selectAccount) {
-    redirect(sanitizeReturnTo(params.return_to) ?? "/account");
+    redirect(
+      sanitizeReturnTo(params.return_to, getEnv().APP_URL) ?? "/account",
+    );
   }
 
   return (

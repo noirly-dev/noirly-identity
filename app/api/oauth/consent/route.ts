@@ -6,7 +6,7 @@ import {
   createAuthorizationCode,
   validateAuthorizeRequest,
 } from "@/lib/oauth/authorize";
-import { applySecurityHeaders } from "@/lib/security/headers";
+import { applySecurityHeaders, redirectGet } from "@/lib/security/headers";
 import { getSessionTokenFromCookies } from "@/lib/security/cookies";
 import { consentSchema } from "@/lib/validation/schemas";
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       const redirect = new URL(data.redirect_uri);
       redirect.searchParams.set("code", code);
       redirect.searchParams.set("state", data.state);
-      return applySecurityHeaders(NextResponse.redirect(redirect));
+      return redirectGet(redirect);
     });
   } catch (error) {
     return errorResponse(error);

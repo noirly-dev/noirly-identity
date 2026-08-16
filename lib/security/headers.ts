@@ -20,3 +20,8 @@ export function jsonResponse(
   const response = NextResponse.json(body, init);
   return applySecurityHeaders(response);
 }
+
+/** 303 so POST (One Tap, OIDC form) follows as GET and does not 405. */
+export function redirectGet(url: string | URL): NextResponse {
+  return applySecurityHeaders(NextResponse.redirect(url, 303));
+}

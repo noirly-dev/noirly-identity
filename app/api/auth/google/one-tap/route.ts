@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { AppError, errorResponse } from "@/lib/api/errors";
 import { enforceRateLimit, readFormBody, readJsonBody } from "@/lib/api/request";
 import { withDb } from "@/lib/api/with-db";
@@ -10,7 +10,7 @@ import {
 import { resolveOneTapReturnTo } from "@/lib/auth/one-tap-return";
 import { getEnv } from "@/lib/config/env";
 import { setSessionCookie } from "@/lib/security/cookies";
-import { applySecurityHeaders, jsonResponse } from "@/lib/security/headers";
+import { jsonResponse, redirectGet } from "@/lib/security/headers";
 import { getClientIp } from "@/lib/security/rate-limit";
 
 async function credentialFromRequest(request: NextRequest): Promise<{
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       const destination = redirectTo.startsWith("http")
         ? redirectTo
         : new URL(redirectTo, env.APP_URL).toString();
-      const response = applySecurityHeaders(NextResponse.redirect(destination));
+      const response = redirectGet(destination);
       await setSessionCookie(response, result.sessionToken);
       return response;
     });
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
           /* ignore */
         }
       }
-      return applySecurityHeaders(NextResponse.redirect(url));
+      return redirectGet(url);
     }
     return errorResponse(error);
   }
