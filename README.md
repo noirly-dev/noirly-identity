@@ -2,7 +2,7 @@
 
 Central authentication and OpenID Connect (OIDC) provider for the Noirly application ecosystem.
 
-One Noirly account authenticates users across future products (CRM, Flow, Docs, Atlas, and more) using standard **OAuth 2.0 Authorization Code + PKCE** and **OpenID Connect**.
+One Noirly account authenticates users across future products (CRM, Flow, Docs, Atlas, and more) using standard **OAuth 2.0 Authorization Code + PKCE** and **OpenID Connect**. For React Native (native UI, no WebView), use [@noirly-dev/identity-mobile](docs/INTEGRATION.md#11-native-mobile-sdk-no-webview).
 
 ```text
                     Noirly Identity

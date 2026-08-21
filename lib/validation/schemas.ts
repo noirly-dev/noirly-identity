@@ -32,6 +32,36 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(128),
 });
 
+export const mobileLoginSchema = loginSchema.extend({
+  client_id: z.string().min(1),
+  scope: z.string().min(1).optional(),
+  nonce: z.string().min(1).max(128).optional(),
+});
+
+export const mobileRegisterSchema = registerSchema.extend({
+  client_id: z.string().min(1),
+  scope: z.string().min(1).optional(),
+  nonce: z.string().min(1).max(128).optional(),
+});
+
+export const mobileGoogleSchema = z.object({
+  client_id: z.string().min(1),
+  id_token: z.string().min(20),
+  scope: z.string().min(1).optional(),
+  nonce: z.string().min(1).max(128).optional(),
+});
+
+export const mobileRefreshSchema = z.object({
+  client_id: z.string().min(1),
+  refresh_token: z.string().min(1),
+  scope: z.string().min(1).optional(),
+});
+
+export const mobileLogoutSchema = z.object({
+  client_id: z.string().min(1),
+  refresh_token: z.string().min(1).optional(),
+});
+
 export const updateProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(100).optional(),
   lastName: z.string().trim().min(1).max(100).optional(),

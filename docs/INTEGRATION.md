@@ -244,7 +244,7 @@ Any standards-compliant OIDC client works, for example:
 
 - NextAuth / Auth.js (`Noirly` as OIDC provider)
 - `openid-client`
-- AppAuth (native)
+- AppAuth (native browser redirect)
 
 Configure:
 
@@ -252,6 +252,68 @@ Configure:
 - client id/secret from registration
 - scopes including `openid`
 - PKCE enabled
+
+## 11. Native mobile SDK (no WebView)
+
+For React Native apps that need **native** email/password and Google UI (not a browser sheet), use `@noirly-dev/identity-mobile` against the mobile token APIs.
+
+### Register a public client
+
+```bash
+npm run client:register -- \
+  --type=public \
+  --client-id=noirly-pulse-mobile \
+  --name=NoirlyPulseMobile \
+  --redirect-uri=noirly-pulse://oauth
+```
+
+Public clients have **no client secret**. Do not embed web client secrets in mobile binaries.
+
+### Endpoints
+
+| Method | Path | Body |
+| --- | --- | --- |
+| POST | `/api/mobile/login` | `{ client_id, email, password, scope? }` |
+| POST | `/api/mobile/register` | `{ client_id, email, password, firstName, lastName, … }` |
+| POST | `/api/mobile/google` | `{ client_id, id_token, nonce? }` |
+| POST | `/api/mobile/refresh` | `{ client_id, refresh_token }` |
+| POST | `/api/mobile/logout` | `{ client_id, refresh_token? }` |
+
+All return JSON tokens:
+
+```json
+{
+  "access_token": "…",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "…",
+  "id_token": "…",
+  "scope": "openid profile email offline_access",
+  "user": { "id": "…", "email": "…", "displayName": "…" }
+}
+```
+
+Google: use `@react-native-google-signin/google-signin` with Identity’s web client as `webClientId` (or list iOS/Android client IDs in `GOOGLE_MOBILE_CLIENT_IDS`), then POST the Google `idToken` to `/api/mobile/google`.
+
+Refresh tokens rotate on every use; reuse of an old refresh token revokes the family. Mobile refresh also extends the backing session toward `REFRESH_TOKEN_TTL_SECONDS`.
+
+### SDK usage
+
+```ts
+import { NoirlyIdentity } from "@noirly-dev/identity-mobile";
+
+NoirlyIdentity.configure({
+  issuer: "https://auth.noirly.com",
+  clientId: "noirly-pulse-mobile",
+});
+
+await NoirlyIdentity.signInWithPassword({ email, password });
+await NoirlyIdentity.signInWithGoogle({ idToken });
+await NoirlyIdentity.getAccessToken();
+await NoirlyIdentity.signOut();
+```
+
+Web apps (Pulse / Flow / Ledger) keep Auth.js + confidential clients. Mobile is a **separate public client** per product.
 
 ## Continue with Noirly
 
@@ -262,3 +324,5 @@ https://auth.noirly.com/api/oauth/authorize?...
 ```
 
 Users keep one Noirly identity across the ecosystem; applications never store or manage Noirly passwords.
+
+For **native mobile** (React Native, no WebView), see [§11 Native mobile SDK](#11-native-mobile-sdk-no-webview) and `@noirly-dev/identity-mobile`.

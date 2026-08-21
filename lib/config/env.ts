@@ -45,6 +45,8 @@ const envSchema = z
     SMTP_PASS: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    /** Extra Google OAuth client IDs (iOS/Android) accepted as id_token audiences. */
+    GOOGLE_MOBILE_CLIENT_IDS: z.string().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.EMAIL_PROVIDER !== "smtp") {
@@ -117,6 +119,7 @@ export function getEnv(): Env {
     SMTP_PASS: process.env.SMTP_PASS,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_MOBILE_CLIENT_IDS: process.env.GOOGLE_MOBILE_CLIENT_IDS,
   });
 
   if (!parsed.success) {

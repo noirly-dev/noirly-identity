@@ -49,10 +49,34 @@ async function main() {
 
   const clientId = arg("client-id");
   const name = arg("name", clientId);
-  const redirectUris = csv(arg("redirect-uri"));
+  const clientType = (optionalArg("type") ?? "confidential") as
+    | "public"
+    | "confidential";
+  if (clientType !== "public" && clientType !== "confidential") {
+    throw new Error(`--type must be public or confidential (got ${clientType})`);
+  }
+
+  const redirectUris = csv(
+    optionalArg("redirect-uri") ??
+      (clientType === "public" ? `${clientId}://oauth` : ""),
+  );
+  if (redirectUris.length === 0) {
+    throw new Error("Missing --redirect-uri=");
+  }
+
   const postLogoutRedirectUris = csv(
     optionalArg("post-logout") ??
-      [...new Set(redirectUris.map((item) => new URL("/", item).origin + "/"))].join(","),
+      [
+        ...new Set(
+          redirectUris.map((item) => {
+            try {
+              return new URL("/", item).origin + "/";
+            } catch {
+              return item;
+            }
+          }),
+        ),
+      ].join(","),
   );
   const extraDbs = csv(optionalArg("also-db") ?? "");
   const writeEnv = optionalArg("write-env");
@@ -60,15 +84,20 @@ async function main() {
   const dbName = resolveMongoDbName(uri, "noirly-identity");
   await mongoose.connect(uri, dbName ? { dbName } : undefined);
   const connectedDb = mongoose.connection.name;
-  const clientSecret = generateSecureToken(32);
+
+  const clientSecret =
+    clientType === "confidential" ? generateSecureToken(32) : null;
   const fields = {
-    clientSecretHash: await hashPassword(clientSecret),
+    clientSecretHash: clientSecret ? await hashPassword(clientSecret) : null,
     name,
-    description: `Confidential OAuth client for ${name}`,
+    description:
+      clientType === "public"
+        ? `Public native OAuth client for ${name}`
+        : `Confidential OAuth client for ${name}`,
     redirectUris,
     postLogoutRedirectUris,
     allowedScopes: ["openid", "profile", "email", "offline_access", "roles"],
-    clientType: "confidential",
+    clientType,
     status: "active",
     requirePkce: true,
     requireConsent: false,
@@ -97,14 +126,21 @@ async function main() {
 
   console.log("Registered OAuth client");
   console.log("  client_id:", clientId);
+  console.log("  client_type:", clientType);
   console.log("  databases:", [...written].join(", "));
   console.log("  redirect_uris:", redirectUris.join(", "));
   console.log("  post_logout_redirect_uris:", postLogoutRedirectUris.join(", "));
-  if (writeEnv) {
+  if (clientType === "public") {
+    console.log("  client_secret: (none — public native client)");
+    if (writeEnv) {
+      upsertEnvValue(resolve(writeEnv), "NOIRLY_IDENTITY_CLIENT_ID", clientId);
+      console.log(`  wrote client id to ${writeEnv}`);
+    }
+  } else if (writeEnv && clientSecret) {
     upsertEnvValue(resolve(writeEnv), "AUTH_NOIRLY_CLIENT_ID", clientId);
     upsertEnvValue(resolve(writeEnv), "AUTH_NOIRLY_CLIENT_SECRET", clientSecret);
     console.log(`  wrote credentials to ${writeEnv}`);
-  } else {
+  } else if (clientSecret) {
     console.log("  client_secret:", clientSecret);
   }
 

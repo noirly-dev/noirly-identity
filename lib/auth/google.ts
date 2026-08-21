@@ -248,12 +248,21 @@ export function googleProfileFromIdTokenClaims(claims: {
   };
 }
 
+export function googleIdTokenAudiences(): string[] {
+  const env = getEnv();
+  const mobile = (env.GOOGLE_MOBILE_CLIENT_IDS ?? "")
+    .split(/[,\s]+/)
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return [...new Set([env.GOOGLE_CLIENT_ID, ...mobile].filter(Boolean) as string[])];
+}
+
 export async function verifyGoogleIdToken(input: {
   credential: string;
   nonce?: string | null;
 }): Promise<GoogleProfile> {
-  const env = getEnv();
-  if (!env.GOOGLE_CLIENT_ID) {
+  const audiences = googleIdTokenAudiences();
+  if (audiences.length === 0) {
     throw new AppError("Google sign-in is not configured", 501, "google_not_configured");
   }
 
@@ -261,7 +270,7 @@ export async function verifyGoogleIdToken(input: {
   try {
     const verified = await jwtVerify(input.credential, GOOGLE_JWKS, {
       issuer: ["https://accounts.google.com", "accounts.google.com"],
-      audience: env.GOOGLE_CLIENT_ID,
+      audience: audiences,
     });
     payload = verified.payload;
   } catch {
