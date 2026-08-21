@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { originFromAppUrl, slugifyClientId, urisFromOrigins } from "@/lib/oauth/app-origins";
-import { registerAppClient, updateAppClient } from "@/lib/oauth/client-admin";
+import { registerAppClient, updateAppClient, deleteAppClient } from "@/lib/oauth/client-admin";
 import { OAuthClient } from "@/models/OAuthClient";
 import { verifyPassword } from "@/lib/security/password";
 import { requireAdminUser } from "@/lib/auth/auth-service";
@@ -142,5 +142,57 @@ describe("oauth client generator", () => {
     expect(result.client.androidSha1Fingerprints).toEqual([
       "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD",
     ]);
+  });
+
+  it("creates a public mobile client without a secret", async () => {
+    const result = await registerAppClient({
+      clientId: "noirly-flow-native",
+      name: "Noirly Flow Native",
+      clientType: "public",
+      redirectUris: ["noirlyflow://oauth"],
+    });
+
+    expect(result.created).toBe(true);
+    expect(result.clientSecret).toBeNull();
+    expect(result.client.clientType).toBe("public");
+    expect(result.client.redirectUris).toEqual(["noirlyflow://oauth"]);
+
+    const stored = await OAuthClient.findOne({
+      clientId: "noirly-flow-native",
+    }).select("+clientSecretHash");
+    expect(stored?.clientSecretHash).toBeFalsy();
+  });
+
+  it("updates client type and replaces redirect URIs", async () => {
+    await registerAppClient({
+      clientId: "noirly-edit-me",
+      name: "Edit Me",
+      origins: ["http://localhost:3999"],
+    });
+
+    const updated = await updateAppClient("noirly-edit-me", {
+      name: "Edited Mobile",
+      clientType: "public",
+      redirectUris: ["noirlyflow://oauth"],
+      replaceUris: true,
+      androidSha1Fingerprints: [],
+    });
+
+    expect(updated.client.name).toBe("Edited Mobile");
+    expect(updated.client.clientType).toBe("public");
+    expect(updated.client.redirectUris).toEqual(["noirlyflow://oauth"]);
+    expect(updated.client.androidSha1Fingerprints).toEqual([]);
+    expect(updated.clientSecret).toBeNull();
+  });
+
+  it("deletes an OAuth client", async () => {
+    await registerAppClient({
+      clientId: "noirly-delete-me",
+      name: "Delete Me",
+      origins: ["http://localhost:3998"],
+    });
+
+    await deleteAppClient("noirly-delete-me");
+    expect(await OAuthClient.findOne({ clientId: "noirly-delete-me" })).toBeNull();
   });
 });

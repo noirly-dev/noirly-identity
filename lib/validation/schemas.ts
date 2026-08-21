@@ -141,35 +141,53 @@ export const oauthCallbackPathSchema = z
   )
   .default("/api/auth/callback/noirly");
 
-export const registerOAuthClientSchema = z.object({
-  clientId: oauthClientIdSchema,
-  name: z.string().trim().min(1).max(120),
-  origins: z.array(z.string().trim().min(1)).min(1).max(20),
-  callbackPath: oauthCallbackPathSchema.optional(),
-  requireConsent: z.boolean().optional(),
-  /** Android signing certificate SHA-1 fingerprints (with or without colons). */
-  androidSha1Fingerprints: z.array(z.string().trim().min(1)).max(20).optional(),
-});
+export const registerOAuthClientSchema = z
+  .object({
+    clientId: oauthClientIdSchema,
+    name: z.string().trim().min(1).max(120),
+    clientType: z.enum(["public", "confidential"]).optional().default("confidential"),
+    origins: z.array(z.string().trim().min(1)).max(20).optional(),
+    redirectUris: z.array(z.string().trim().min(1)).max(20).optional(),
+    callbackPath: oauthCallbackPathSchema.optional(),
+    requireConsent: z.boolean().optional(),
+    /** Android signing certificate SHA-1 fingerprints (with or without colons). */
+    androidSha1Fingerprints: z.array(z.string().trim().min(1)).max(20).optional(),
+  })
+  .refine(
+    (value) =>
+      Boolean(value.origins?.length || value.redirectUris?.length),
+    {
+      message: "Provide at least one app origin or redirect URI",
+      path: ["origins"],
+    },
+  );
 
 export const updateOAuthClientSchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
-    origins: z.array(z.string().trim().min(1)).min(1).max(20).optional(),
+    clientType: z.enum(["public", "confidential"]).optional(),
+    origins: z.array(z.string().trim().min(1)).max(20).optional(),
+    redirectUris: z.array(z.string().trim().min(1)).max(20).optional(),
     callbackPath: oauthCallbackPathSchema.optional(),
     rotateSecret: z.boolean().optional(),
     status: z.enum(["active", "disabled"]).optional(),
     requireConsent: z.boolean().optional(),
+    /** When set, replaces the full fingerprint list (use [] to clear). */
     androidSha1Fingerprints: z.array(z.string().trim().min(1)).max(20).optional(),
+    /** When true with origins/redirectUris, replace URIs instead of merging. */
+    replaceUris: z.boolean().optional(),
   })
   .refine(
     (value) =>
       Boolean(
         value.name ||
-          value.origins ||
+          value.clientType ||
+          (value.origins && value.origins.length > 0) ||
+          (value.redirectUris && value.redirectUris.length > 0) ||
           value.rotateSecret ||
           value.status ||
           value.requireConsent !== undefined ||
-          value.androidSha1Fingerprints,
+          value.androidSha1Fingerprints !== undefined,
       ),
     { message: "No client updates provided" },
   );

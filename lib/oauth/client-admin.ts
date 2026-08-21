@@ -11,7 +11,7 @@ import {
   urisFromOrigins,
 } from "@/lib/oauth/app-origins";
 import { OAuthClient, type OAuthClientDocument } from "@/models/OAuthClient";
-import type { PublicOAuthClient } from "@/types";
+import type { ClientType, PublicOAuthClient } from "@/types";
 
 const DEFAULT_SCOPES = [
   "openid",
@@ -58,10 +58,75 @@ function parseSha1Input(values?: string[]): string[] {
   }
 }
 
+function parseRedirectUris(values: string[]): string[] {
+  const next: string[] = [];
+  for (const raw of values) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    let parsed: URL;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      throw new AppError(`Invalid redirect URI: ${trimmed}`, 400, "validation_error");
+    }
+    if (!parsed.protocol || parsed.protocol === "javascript:") {
+      throw new AppError(`Invalid redirect URI: ${trimmed}`, 400, "validation_error");
+    }
+    next.push(trimmed);
+  }
+  if (next.length === 0) {
+    throw new AppError("At least one redirect URI is required", 400, "validation_error");
+  }
+  return uniqueStrings(next);
+}
+
+function resolveUris(input: {
+  origins?: string[];
+  redirectUris?: string[];
+  callbackPath?: string;
+}): { redirectUris: string[]; postLogoutRedirectUris: string[] } {
+  if (input.redirectUris?.length) {
+    const redirectUris = parseRedirectUris(input.redirectUris);
+    return {
+      redirectUris,
+      postLogoutRedirectUris: redirectUris
+        .filter((uri) => uri.startsWith("http://") || uri.startsWith("https://"))
+        .map((uri) => {
+          try {
+            return new URL("/", uri).origin + "/";
+          } catch {
+            return uri;
+          }
+        }),
+    };
+  }
+  if (input.origins?.length) {
+    try {
+      const uris = urisFromOrigins(input.origins, input.callbackPath);
+      return {
+        redirectUris: uris.redirectUris,
+        postLogoutRedirectUris: uris.postLogoutRedirectUris,
+      };
+    } catch (error) {
+      if (error instanceof OriginParseError) {
+        throw new AppError(error.message, 400, "validation_error");
+      }
+      throw error;
+    }
+  }
+  throw new AppError(
+    "Provide at least one app origin or redirect URI",
+    400,
+    "validation_error",
+  );
+}
+
 export async function registerAppClient(input: {
   clientId: string;
   name: string;
-  origins: string[];
+  clientType?: ClientType;
+  origins?: string[];
+  redirectUris?: string[];
   callbackPath?: string;
   requireConsent?: boolean;
   androidSha1Fingerprints?: string[];
@@ -70,15 +135,8 @@ export async function registerAppClient(input: {
   clientSecret: string | null;
   created: boolean;
 }> {
-  let uris;
-  try {
-    uris = urisFromOrigins(input.origins, input.callbackPath);
-  } catch (error) {
-    if (error instanceof OriginParseError) {
-      throw new AppError(error.message, 400, "validation_error");
-    }
-    throw error;
-  }
+  const clientType = input.clientType ?? "confidential";
+  const uris = resolveUris(input);
   const sha1s = parseSha1Input(input.androidSha1Fingerprints);
   const existing = await OAuthClient.findOne({ clientId: input.clientId });
 
@@ -108,16 +166,20 @@ export async function registerAppClient(input: {
     };
   }
 
-  const clientSecret = generateSecureToken(32);
+  const clientSecret =
+    clientType === "confidential" ? generateSecureToken(32) : null;
   const created = await OAuthClient.create({
     clientId: input.clientId,
-    clientSecretHash: await hashPassword(clientSecret),
+    clientSecretHash: clientSecret ? await hashPassword(clientSecret) : null,
     name: input.name,
-    description: `Confidential OAuth client for ${input.name}`,
+    description:
+      clientType === "public"
+        ? `Public native OAuth client for ${input.name}`
+        : `Confidential OAuth client for ${input.name}`,
     redirectUris: uris.redirectUris,
     postLogoutRedirectUris: uris.postLogoutRedirectUris,
     allowedScopes: [...DEFAULT_SCOPES],
-    clientType: "confidential",
+    clientType,
     status: "active",
     requirePkce: true,
     requireConsent: input.requireConsent ?? false,
@@ -135,12 +197,15 @@ export async function updateAppClient(
   clientId: string,
   input: {
     name?: string;
+    clientType?: ClientType;
     origins?: string[];
+    redirectUris?: string[];
     callbackPath?: string;
     rotateSecret?: boolean;
     status?: "active" | "disabled";
     requireConsent?: boolean;
     androidSha1Fingerprints?: string[];
+    replaceUris?: boolean;
   },
 ): Promise<{ client: PublicOAuthClient; clientSecret: string | null }> {
   const existing = await OAuthClient.findOne({ clientId }).select("+clientSecretHash");
@@ -151,30 +216,31 @@ export async function updateAppClient(
   if (input.name) {
     existing.name = input.name;
   }
-  if (input.origins) {
-    let uris;
-    try {
-      uris = urisFromOrigins(input.origins, input.callbackPath);
-    } catch (error) {
-      if (error instanceof OriginParseError) {
-        throw new AppError(error.message, 400, "validation_error");
-      }
-      throw error;
+
+  const hasUriUpdate = Boolean(input.origins?.length || input.redirectUris?.length);
+  if (hasUriUpdate) {
+    const uris = resolveUris({
+      origins: input.origins,
+      redirectUris: input.redirectUris,
+      callbackPath: input.callbackPath,
+    });
+    if (input.replaceUris || input.redirectUris?.length) {
+      existing.redirectUris = uris.redirectUris;
+      existing.postLogoutRedirectUris = uris.postLogoutRedirectUris;
+    } else {
+      existing.redirectUris = uniqueStrings([
+        ...existing.redirectUris,
+        ...uris.redirectUris,
+      ]);
+      existing.postLogoutRedirectUris = uniqueStrings([
+        ...existing.postLogoutRedirectUris,
+        ...uris.postLogoutRedirectUris,
+      ]);
     }
-    existing.redirectUris = uniqueStrings([
-      ...existing.redirectUris,
-      ...uris.redirectUris,
-    ]);
-    existing.postLogoutRedirectUris = uniqueStrings([
-      ...existing.postLogoutRedirectUris,
-      ...uris.postLogoutRedirectUris,
-    ]);
   }
-  if (input.androidSha1Fingerprints) {
-    existing.androidSha1Fingerprints = uniqueStrings([
-      ...(existing.androidSha1Fingerprints ?? []),
-      ...parseSha1Input(input.androidSha1Fingerprints),
-    ]);
+
+  if (input.androidSha1Fingerprints !== undefined) {
+    existing.androidSha1Fingerprints = parseSha1Input(input.androidSha1Fingerprints);
   }
   if (input.status) {
     existing.status = input.status;
@@ -184,11 +250,41 @@ export async function updateAppClient(
   }
 
   let clientSecret: string | null = null;
+  const nextType = input.clientType ?? existing.clientType;
+  if (input.clientType && input.clientType !== existing.clientType) {
+    existing.clientType = input.clientType;
+    existing.description =
+      input.clientType === "public"
+        ? `Public native OAuth client for ${existing.name}`
+        : `Confidential OAuth client for ${existing.name}`;
+    if (input.clientType === "public") {
+      existing.clientSecretHash = null;
+    } else if (!input.rotateSecret) {
+      // Confidential needs a secret; mint one when promoting from public.
+      clientSecret = generateSecureToken(32);
+      existing.clientSecretHash = await hashPassword(clientSecret);
+    }
+  }
+
   if (input.rotateSecret) {
+    if (nextType === "public") {
+      throw new AppError(
+        "Public clients do not have a client secret to rotate",
+        400,
+        "invalid_client",
+      );
+    }
     clientSecret = generateSecureToken(32);
     existing.clientSecretHash = await hashPassword(clientSecret);
   }
 
   await existing.save();
   return { client: toPublicOAuthClient(existing), clientSecret };
+}
+
+export async function deleteAppClient(clientId: string): Promise<void> {
+  const deleted = await OAuthClient.findOneAndDelete({ clientId });
+  if (!deleted) {
+    throw new AppError("Unknown OAuth client", 404, "not_found");
+  }
 }
