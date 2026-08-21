@@ -34,6 +34,7 @@ export type PublicOAuthClient = {
   allowedScopes: string[];
   requirePkce: boolean;
   requireConsent: boolean;
+  androidSha1Fingerprints: string[];
   createdAt: string;
   updatedAt: string;
 };

@@ -32,6 +32,13 @@ function parseOrigins(value: string): string[] {
     .filter(Boolean);
 }
 
+function parseSha1Lines(value: string): string[] {
+  return value
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function envSnippet(issuer: string, clientId: string, secret: string): string {
   return [
     `AUTH_NOIRLY_ISSUER=${issuer}`,
@@ -47,6 +54,7 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
   const [clientId, setClientId] = useState("");
   const [clientIdTouched, setClientIdTouched] = useState(false);
   const [originsText, setOriginsText] = useState("");
+  const [sha1Text, setSha1Text] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [issued, setIssued] = useState<{ clientId: string; secret: string } | null>(
@@ -95,6 +103,7 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
           name: name.trim(),
           clientId: effectiveId.trim(),
           origins: parseOrigins(originsText),
+          androidSha1Fingerprints: parseSha1Lines(sha1Text),
         }),
       });
       const data = (await res.json()) as RegisterResponse;
@@ -229,7 +238,8 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
               <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
                 Register Flow, Ledger, Pulse, or any future Noirly app. Paste
                 localhost and production origins — Identity fills in the Auth.js
-                callback and logout URLs.
+                callback and logout URLs. For Android mobile clients, add signing
+                cert SHA-1 fingerprints.
               </p>
             </div>
 
@@ -258,6 +268,13 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
                         <li key={uri}>{uri}</li>
                       ))}
                     </ul>
+                    {client.androidSha1Fingerprints?.length ? (
+                      <ul className="mt-2 space-y-1 font-mono text-[11px] break-all text-muted">
+                        {client.androidSha1Fingerprints.map((fp) => (
+                          <li key={fp}>SHA-1 {fp}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                     <div className="mt-3 flex flex-wrap gap-3">
                       <button
                         type="button"
@@ -322,6 +339,18 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
               placeholder={`http://localhost:3003\nhttps://noirly.ledger.aneesh-pissay.in`}
               required
             />
+            <TextArea
+              label="Android SHA-1"
+              name="androidSha1"
+              value={sha1Text}
+              onChange={(event) => setSha1Text(event.target.value)}
+              placeholder={`AA:BB:CC:DD:… (debug / release signing cert)\nOne fingerprint per line`}
+            />
+            <p className="font-mono text-[10px] leading-relaxed tracking-[0.04em] text-panel-ink/55">
+              Optional. Paste Android signing-certificate SHA-1 fingerprints for
+              mobile apps (Keystore / Play App Signing). Used for inventory and
+              Google Sign-In setup.
+            </p>
             {preview ? (
               <div className="font-mono text-[11px] leading-relaxed text-panel-ink/70">
                 <p className="tracking-[0.16em] uppercase text-panel-ink/45">Callbacks</p>

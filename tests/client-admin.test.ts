@@ -128,4 +128,19 @@ describe("oauth client generator", () => {
     const admin = await requireAdminUser(token);
     expect(admin.roles).toContain("admin");
   });
+
+  it("stores android SHA-1 fingerprints on register", async () => {
+    const result = await registerAppClient({
+      clientId: "noirly-flow-mobile",
+      name: "NoirlyFlowMobile",
+      origins: ["http://localhost:3002"],
+      androidSha1Fingerprints: [
+        "aabbccddeeff00112233445566778899aabbccdd",
+      ],
+    });
+
+    expect(result.client.androidSha1Fingerprints).toEqual([
+      "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD",
+    ]);
+  });
 });

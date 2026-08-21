@@ -2,6 +2,10 @@ import { AppError } from "@/lib/api/errors";
 import { generateSecureToken } from "@/lib/security/crypto";
 import { hashPassword } from "@/lib/security/password";
 import {
+  parseAndroidSha1List,
+  Sha1ParseError,
+} from "@/lib/oauth/android-sha1";
+import {
   OriginParseError,
   uniqueStrings,
   urisFromOrigins,
@@ -29,6 +33,7 @@ export function toPublicOAuthClient(client: OAuthClientDocument): PublicOAuthCli
     allowedScopes: client.allowedScopes,
     requirePkce: client.requirePkce,
     requireConsent: client.requireConsent,
+    androidSha1Fingerprints: client.androidSha1Fingerprints ?? [],
     createdAt: client.createdAt.toISOString(),
     updatedAt: client.updatedAt.toISOString(),
   };
@@ -41,12 +46,25 @@ export async function listOAuthClients(): Promise<PublicOAuthClient[]> {
   return clients.map(toPublicOAuthClient);
 }
 
+function parseSha1Input(values?: string[]): string[] {
+  if (!values?.length) return [];
+  try {
+    return parseAndroidSha1List(values);
+  } catch (error) {
+    if (error instanceof Sha1ParseError) {
+      throw new AppError(error.message, 400, "validation_error");
+    }
+    throw error;
+  }
+}
+
 export async function registerAppClient(input: {
   clientId: string;
   name: string;
   origins: string[];
   callbackPath?: string;
   requireConsent?: boolean;
+  androidSha1Fingerprints?: string[];
 }): Promise<{
   client: PublicOAuthClient;
   clientSecret: string | null;
@@ -61,6 +79,7 @@ export async function registerAppClient(input: {
     }
     throw error;
   }
+  const sha1s = parseSha1Input(input.androidSha1Fingerprints);
   const existing = await OAuthClient.findOne({ clientId: input.clientId });
 
   if (existing) {
@@ -72,6 +91,10 @@ export async function registerAppClient(input: {
     existing.postLogoutRedirectUris = uniqueStrings([
       ...existing.postLogoutRedirectUris,
       ...uris.postLogoutRedirectUris,
+    ]);
+    existing.androidSha1Fingerprints = uniqueStrings([
+      ...(existing.androidSha1Fingerprints ?? []),
+      ...sha1s,
     ]);
     existing.status = "active";
     if (input.requireConsent !== undefined) {
@@ -98,6 +121,7 @@ export async function registerAppClient(input: {
     status: "active",
     requirePkce: true,
     requireConsent: input.requireConsent ?? false,
+    androidSha1Fingerprints: sha1s,
   });
 
   return {
@@ -116,6 +140,7 @@ export async function updateAppClient(
     rotateSecret?: boolean;
     status?: "active" | "disabled";
     requireConsent?: boolean;
+    androidSha1Fingerprints?: string[];
   },
 ): Promise<{ client: PublicOAuthClient; clientSecret: string | null }> {
   const existing = await OAuthClient.findOne({ clientId }).select("+clientSecretHash");
@@ -143,6 +168,12 @@ export async function updateAppClient(
     existing.postLogoutRedirectUris = uniqueStrings([
       ...existing.postLogoutRedirectUris,
       ...uris.postLogoutRedirectUris,
+    ]);
+  }
+  if (input.androidSha1Fingerprints) {
+    existing.androidSha1Fingerprints = uniqueStrings([
+      ...(existing.androidSha1Fingerprints ?? []),
+      ...parseSha1Input(input.androidSha1Fingerprints),
     ]);
   }
   if (input.status) {

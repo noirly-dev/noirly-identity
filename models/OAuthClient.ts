@@ -14,6 +14,7 @@ export type OAuthClientDocument = {
   status: ClientStatus;
   requirePkce: boolean;
   requireConsent: boolean;
+  androidSha1Fingerprints: string[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -62,6 +63,11 @@ const oauthClientSchema = new Schema<OAuthClientDocument>(
     },
     requirePkce: { type: Boolean, default: true },
     requireConsent: { type: Boolean, default: true },
+    /** Android signing-cert SHA-1 fingerprints (colon-separated uppercase). */
+    androidSha1Fingerprints: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

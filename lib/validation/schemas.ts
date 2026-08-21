@@ -147,6 +147,8 @@ export const registerOAuthClientSchema = z.object({
   origins: z.array(z.string().trim().min(1)).min(1).max(20),
   callbackPath: oauthCallbackPathSchema.optional(),
   requireConsent: z.boolean().optional(),
+  /** Android signing certificate SHA-1 fingerprints (with or without colons). */
+  androidSha1Fingerprints: z.array(z.string().trim().min(1)).max(20).optional(),
 });
 
 export const updateOAuthClientSchema = z
@@ -157,6 +159,7 @@ export const updateOAuthClientSchema = z
     rotateSecret: z.boolean().optional(),
     status: z.enum(["active", "disabled"]).optional(),
     requireConsent: z.boolean().optional(),
+    androidSha1Fingerprints: z.array(z.string().trim().min(1)).max(20).optional(),
   })
   .refine(
     (value) =>
@@ -165,7 +168,8 @@ export const updateOAuthClientSchema = z
           value.origins ||
           value.rotateSecret ||
           value.status ||
-          value.requireConsent !== undefined,
+          value.requireConsent !== undefined ||
+          value.androidSha1Fingerprints,
       ),
     { message: "No client updates provided" },
   );
