@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ClientGenerator } from "@/components/identity/ClientGenerator";
+import { ClientGenerator } from "@/components/ClientGenerator";
 import { withDb } from "@/lib/api/with-db";
 import { getCurrentUser } from "@/lib/auth/auth-service";
 import { getEnv } from "@/lib/config/env";

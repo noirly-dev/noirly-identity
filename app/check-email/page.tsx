@@ -2,11 +2,16 @@
 
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
-import { Field } from "@/components/identity/Field";
-import { ActionButton, TextLink } from "@/components/identity/Buttons";
+import { AuthShell } from "@noirly-dev/ui";
+import {
+  BusyOverlay,
+  FormField,
+  Notice,
+  ScreenFallback,
+  SubmitButton,
+  TextLink,
+} from "@/components/auth-ui";
 import { withReturnTo } from "@/lib/auth/return-to";
-import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
 function maskEmail(email: string): string {
   const normalized = email.trim().toLowerCase();
@@ -81,69 +86,50 @@ function CheckEmailContent() {
   }
 
   return (
-    <EditorialShell
-      label="Verify"
-      navRightHref={withReturnTo("/login", returnTo)}
-      navRightLabel="Sign in"
-      left={
-        <>
-          <div>
-            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted">
-              Inbox
-            </p>
-            <h1 className="text-perforated mt-4 font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-7xl">
-              Check your email
-            </h1>
-            <p className="mt-6 max-w-md text-base text-muted">
-              We&apos;ve sent a verification link
-              {masked ? (
-                <>
-                  {" "}
-                  to <span className="text-ink">{masked}</span>
-                </>
-              ) : (
-                "."
-              )}{" "}
-              Click the button in the email to verify your account.
-              After that you will return to the app that sent you here.
-            </p>
-          </div>
-          <DotMatrixNumeral className="text-7xl md:text-9xl">
-            {String(cooldown || 60).padStart(2, "0")}
-          </DotMatrixNumeral>
-        </>
+    <AuthShell
+      title="Check your email"
+      lead={
+        masked
+          ? `We've sent a verification link to ${masked}. Click the button in the email to verify your account.`
+          : "We've sent a verification link. Click the button in the email to verify your account."
       }
-      right={
-        <>
-          {sending ? <BusyOverlay label="Sending verification email" /> : null}
-          <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-panel-ink/55">
-            Didn&apos;t receive it?
-          </p>
-          <form className="flex flex-col gap-6" onSubmit={resend}>
-            {!emailFromQuery ? (
-              <Field
-                label="Email address"
-                type="email"
-                placeholder="you@noirly.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            ) : null}
-            <ActionButton type="submit" busy={sending} disabled={cooldown > 0} busyLabel="Sending">
-              {cooldown > 0
-                ? `Resend available in ${cooldown}s`
-                : "Resend verification email"}
-            </ActionButton>
-          </form>
-          {message ? <Notice>{message}</Notice> : null}
-          {error ? <Notice>{error}</Notice> : null}
-          <TextLink href={withReturnTo("/login", returnTo)} tone="panel">
-            Already verified? Sign in
-          </TextLink>
-        </>
+      footer={
+        <TextLink href={withReturnTo("/login", returnTo)}>
+          Already verified? Sign in
+        </TextLink>
       }
-    />
+    >
+      {sending ? <BusyOverlay label="Sending verification email" /> : null}
+      <div className="flex flex-col gap-6">
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+          Didn&apos;t receive it?
+        </p>
+        <form className="flex flex-col gap-4" onSubmit={resend}>
+          {!emailFromQuery ? (
+            <FormField
+              label="Email address"
+              type="email"
+              placeholder="you@noirly.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          ) : null}
+          <SubmitButton
+            type="submit"
+            busy={sending}
+            disabled={cooldown > 0}
+            busyLabel="Sending"
+          >
+            {cooldown > 0
+              ? `Resend available in ${cooldown}s`
+              : "Resend verification email"}
+          </SubmitButton>
+        </form>
+        {message ? <Notice tone="success">{message}</Notice> : null}
+        {error ? <Notice tone="error">{error}</Notice> : null}
+      </div>
+    </AuthShell>
   );
 }
 

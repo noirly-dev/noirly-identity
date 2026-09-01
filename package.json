@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -20,13 +20,15 @@
     "email:test": "tsx scripts/test-smtp.ts"
   },
   "dependencies": {
+    "@noirly-dev/ui": "^0.1.0",
     "argon2": "^0.45.1",
     "jose": "^6.2.8",
+    "lucide-react": "^0.544.0",
     "mongoose": "^9.9.2",
     "next": "16.3.0",
     "nodemailer": "^9.0.5",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "zod": "^4.4.3"
   },
   "devDependencies": {

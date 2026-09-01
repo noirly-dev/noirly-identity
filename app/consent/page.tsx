@@ -2,10 +2,9 @@
 
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AuthShell, Button } from "@noirly-dev/ui";
+import { BusyOverlay, Notice, ScreenFallback } from "@/components/auth-ui";
 import { getCsrf } from "@/lib/auth/csrf-client";
-import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
-import { ActionButton } from "@/components/identity/Buttons";
-import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
 
 function ConsentForm() {
   const params = useSearchParams();
@@ -79,82 +78,61 @@ function ConsentForm() {
   }
 
   return (
-    <EditorialShell
-      label="OAuth 2.0"
-      left={
-        <>
-          <div>
-            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted">
-              Authorization
-            </p>
-            <h1 className="text-perforated mt-4 font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-6xl">
-              Authorize application
-            </h1>
-            <p className="mt-6 max-w-md text-base text-muted">
-              <span className="text-ink">{clientId}</span> requests access to
-              your Noirly Identity account.
-            </p>
-            <div className="mt-8 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-hairline font-mono text-[10px] tracking-[0.14em] uppercase">
-              App
-            </div>
-          </div>
-          <p className="font-mono text-[10px] tracking-[0.12em] break-all uppercase text-muted">
-            {redirectUri}
-          </p>
-        </>
-      }
-      right={
-        <>
-          {busy ? (
-            <BusyOverlay label={busy === "approve" ? "Allowing access" : "Denying access"} />
-          ) : null}
-          <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-panel-ink/55">
-            Requested scopes
-          </p>
-          <ul className="flex flex-col">
-            {(scopes.length ? scopes : ["openid"]).map((scope, index) => (
-              <li
-                key={scope}
-                className="flex items-baseline justify-between gap-4 border-b border-dashed border-panel-ink/25 py-4"
-              >
-                <DotMatrixNumeral className="text-2xl">
-                  {String(index + 1).padStart(2, "0")}
-                </DotMatrixNumeral>
-                <span className="font-mono text-sm tracking-[0.08em] uppercase">
-                  {scope}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={onApprove}>
-            <ActionButton
-              className="flex-1"
-              type="submit"
-              busy={busy === "approve"}
-              busyLabel="Allowing"
-              disabled={busy !== null}
+    <AuthShell
+      title="Authorize application"
+      lead={`${clientId} requests access to your Noirly Identity account.`}
+    >
+      {busy ? (
+        <BusyOverlay
+          label={busy === "approve" ? "Allowing access" : "Denying access"}
+        />
+      ) : null}
+      <div className="flex flex-col gap-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[var(--hairline)] text-[10px] uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+          App
+        </div>
+        <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+          Requested scopes
+        </p>
+        <ul className="flex flex-col divide-y divide-[var(--hairline)] rounded-xl border border-[var(--hairline)]">
+          {(scopes.length ? scopes : ["openid"]).map((scope) => (
+            <li
+              key={scope}
+              className="px-4 py-3 font-mono text-sm uppercase tracking-[0.08em]"
             >
-              Allow
-            </ActionButton>
-            <ActionButton
-              className="flex-1"
-              type="button"
-              outline
-              busy={busy === "deny"}
-              busyLabel="Denying"
-              disabled={busy !== null}
-              onClick={() => void decide("deny")}
-            >
-              Deny
-            </ActionButton>
-          </form>
-          {error ? <Notice>{error}</Notice> : null}
-          <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-panel-ink/45">
-            client_id {clientId}
-          </p>
-        </>
-      }
-    />
+              {scope}
+            </li>
+          ))}
+        </ul>
+        <form className="flex flex-col gap-3 sm:flex-row" onSubmit={onApprove}>
+          <Button
+            className="flex-1"
+            type="submit"
+            disabled={busy !== null}
+            aria-busy={busy === "approve"}
+          >
+            {busy === "approve" ? "Allowing…" : "Allow"}
+          </Button>
+          <Button
+            className="flex-1"
+            type="button"
+            variant="secondary"
+            disabled={busy !== null}
+            aria-busy={busy === "deny"}
+            onClick={() => void decide("deny")}
+          >
+            {busy === "deny" ? "Denying…" : "Deny"}
+          </Button>
+        </form>
+        {error ? <Notice tone="error">{error}</Notice> : null}
+        <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+          Redirect: {redirectUri || "—"}
+        </p>
+        <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+          client_id {clientId}
+        </p>
+      </div>
+    </AuthShell>
   );
 }
 

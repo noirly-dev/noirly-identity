@@ -167,7 +167,7 @@ export function GoogleOneTap({
   return (
     <div className="flex flex-col gap-3">
       <div ref={buttonRef} className="flex min-h-10 w-full justify-center" />
-      <p className="font-mono text-[10px] tracking-[0.12em] uppercase text-panel-ink/45">
+      <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
         Choose any Google account — One Tap or the button above
       </p>
     </div>

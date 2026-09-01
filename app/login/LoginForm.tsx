@@ -2,21 +2,21 @@
 
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AuthShell } from "@noirly-dev/ui";
+import {
+  BusyOverlay,
+  FormField,
+  GoogleButton,
+  Notice,
+  ScreenFallback,
+  SubmitButton,
+  TextLink,
+} from "@/components/auth-ui";
+import { GoogleOneTap } from "@/components/GoogleOneTap";
+import { OrDivider } from "@/components/OrDivider";
 import { getCsrf } from "@/lib/auth/csrf-client";
 import { goReturnTo, isPopupLogin, withPopup, withReturnTo } from "@/lib/auth/return-to";
 import { forgetEmail, listRecentEmails, rememberEmail } from "@/lib/auth/recent-emails";
-import {
-  EditorialShell,
-  PopupAuthShell,
-  BusyOverlay,
-  Notice,
-  ScreenFallback,
-} from "@/components/identity/EditorialShell";
-import { Field } from "@/components/identity/Field";
-import { ActionButton, GoogleButton, TextLink } from "@/components/identity/Buttons";
-import { GoogleOneTap } from "@/components/identity/GoogleOneTap";
-import { OrDivider } from "@/components/identity/OrDivider";
-import { DotMatrixClock } from "@/components/identity/DotMatrix";
 
 export function LoginForm({
   popup = false,
@@ -115,16 +115,16 @@ export function LoginForm({
   const accountsBlock =
     recentEmails.length > 0 || currentEmail ? (
       <div className="flex flex-col gap-2">
-        <p className="font-mono text-[11px] tracking-[0.18em] uppercase text-panel-ink/55">
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
           {selectAccount ? "Choose an account" : "Accounts on this device"}
         </p>
         {currentEmail && selectAccount ? (
           <button
             type="button"
-            className="border border-dashed border-panel-ink px-3 py-3 text-left"
+            className="rounded-xl border border-[var(--hairline)] bg-[var(--surface-2)] px-3 py-3 text-left transition-colors hover:bg-[var(--surface)]"
             onClick={() => goReturnTo(returnTo ?? "/account")}
           >
-            <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-panel-ink/55">
+            <span className="block text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
               Continue as
             </span>
             <span className="mt-1 block truncate text-sm">{currentEmail}</span>
@@ -139,7 +139,7 @@ export function LoginForm({
           return (
             <div
               key={item}
-              className="flex items-center gap-2 border border-dashed border-panel-ink/35 px-3 py-2"
+              className="flex items-center gap-2 rounded-xl border border-[var(--hairline)] px-3 py-2"
             >
               <button
                 type="button"
@@ -154,7 +154,7 @@ export function LoginForm({
               >
                 {item}
                 {isCurrent ? (
-                  <span className="ml-2 font-mono text-[10px] tracking-[0.12em] uppercase text-panel-ink/50">
+                  <span className="ml-2 text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
                     current
                   </span>
                 ) : null}
@@ -162,7 +162,7 @@ export function LoginForm({
               {googleEnabled ? (
                 <a
                   href={googleHref}
-                  className="shrink-0 font-mono text-[10px] tracking-[0.12em] uppercase text-panel-ink/70 underline decoration-dashed underline-offset-4"
+                  className="shrink-0 text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)] underline underline-offset-4 hover:text-[var(--foreground)]"
                 >
                   Google
                 </a>
@@ -170,7 +170,7 @@ export function LoginForm({
               <button
                 type="button"
                 aria-label={`Remove ${item}`}
-                className="shrink-0 font-mono text-[11px] uppercase text-panel-ink/50 hover:text-panel-ink"
+                className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                 onClick={() => setRecentEmails(forgetEmail(item))}
               >
                 ×
@@ -182,102 +182,71 @@ export function LoginForm({
       </div>
     ) : null;
 
-  const panel = (
-    <>
-      {submitting ? <BusyOverlay label="Signing in" /> : null}
-      {selectAccount ? (
-        <>
-          {accountsBlock}
-          {googleBlock}
-        </>
-      ) : (
-        <>
-          {googleBlock}
-          {accountsBlock}
-        </>
-      )}
-      <form className="flex flex-col gap-6" onSubmit={onSubmit}>
-        <Field
-          label="Email"
-          name="email"
-          type="email"
-          placeholder="you@noirly.com"
-          required
-          autoComplete="username"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-        <Field
-          label="Password"
-          name="password"
-          type="password"
-          placeholder="••••••••••"
-          required
-          autoComplete="current-password"
-        />
-        <ActionButton type="submit" busy={submitting} busyLabel="Signing in">
-          Sign in
-        </ActionButton>
-      </form>
-      {error ? <Notice>{error}</Notice> : null}
-      {unverifiedEmail ? (
-        <TextLink
-          href={withPopup(
-            withReturnTo(
-              `/check-email?email=${encodeURIComponent(unverifiedEmail)}`,
-              returnTo,
-            ),
-            compact,
-          )}
-          tone="panel"
-        >
-          Resend verification email
-        </TextLink>
-      ) : null}
-      <div className="flex flex-wrap justify-between gap-3 font-mono text-[11px] tracking-[0.08em] uppercase">
-        <TextLink href={withPopup("/forgot-password", compact)} tone="panel">
-          Forgot password?
-        </TextLink>
-        <TextLink href={registerHref} tone="panel">
-          No account? Register
-        </TextLink>
-      </div>
-    </>
-  );
-
-  if (compact) {
-    return (
-      <PopupAuthShell
-        eyebrow="Access"
-        title={selectAccount ? "Choose account" : "Sign in"}
-        navRightHref={registerHref}
-        navRightLabel="Register"
-      >
-        {panel}
-      </PopupAuthShell>
-    );
-  }
-
   return (
-    <EditorialShell
-      label="Session"
-      navRightHref={registerHref}
-      navRightLabel="Register"
-      left={
-        <>
-          <div>
-            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted">
-              Access
-            </p>
-            <h1 className="text-perforated mt-4 font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-7xl">
-              {selectAccount ? "Choose a Noirly account" : "Sign in to Noirly"}
-            </h1>
-          </div>
-          <DotMatrixClock className="text-6xl md:text-8xl" />
-        </>
+    <AuthShell
+      title={selectAccount ? "Choose account" : "Sign in to Noirly"}
+      lead="Access your Noirly identity across the ecosystem."
+      footer={
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <TextLink href={withPopup("/forgot-password", compact)}>
+            Forgot password?
+          </TextLink>
+          <TextLink href={registerHref}>No account? Register</TextLink>
+        </div>
       }
-      right={panel}
-    />
+    >
+      {submitting ? <BusyOverlay label="Signing in" /> : null}
+      <div className="flex flex-col gap-6">
+        {selectAccount ? (
+          <>
+            {accountsBlock}
+            {googleBlock}
+          </>
+        ) : (
+          <>
+            {googleBlock}
+            {accountsBlock}
+          </>
+        )}
+        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+          <FormField
+            label="Email"
+            name="email"
+            type="email"
+            placeholder="you@noirly.com"
+            required
+            autoComplete="username"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <FormField
+            label="Password"
+            name="password"
+            type="password"
+            placeholder="••••••••••"
+            required
+            autoComplete="current-password"
+          />
+          <SubmitButton busy={submitting} busyLabel="Signing in">
+            Sign in
+          </SubmitButton>
+        </form>
+        {error ? <Notice tone="error">{error}</Notice> : null}
+        {unverifiedEmail ? (
+          <TextLink
+            href={withPopup(
+              withReturnTo(
+                `/check-email?email=${encodeURIComponent(unverifiedEmail)}`,
+                returnTo,
+              ),
+              compact,
+            )}
+          >
+            Resend verification email
+          </TextLink>
+        ) : null}
+      </div>
+    </AuthShell>
   );
 }
 

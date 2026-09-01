@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AccountSettings } from "@/components/identity/AccountSettings";
+import { AccountSettings } from "@/components/AccountSettings";
 import { withDb } from "@/lib/api/with-db";
 import { getCurrentUser } from "@/lib/auth/auth-service";
 import { getSessionTokenFromCookies } from "@/lib/security/cookies";

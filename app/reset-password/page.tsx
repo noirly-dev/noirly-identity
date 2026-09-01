@@ -2,10 +2,15 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { EditorialShell, BusyOverlay, Notice, ScreenFallback } from "@/components/identity/EditorialShell";
-import { Field } from "@/components/identity/Field";
-import { ActionButton, TextLink } from "@/components/identity/Buttons";
-import { DotMatrixClock } from "@/components/identity/DotMatrix";
+import { AuthShell } from "@noirly-dev/ui";
+import {
+  BusyOverlay,
+  FormField,
+  Notice,
+  ScreenFallback,
+  SubmitButton,
+  TextLink,
+} from "@/components/auth-ui";
 
 function ResetForm() {
   const params = useSearchParams();
@@ -45,71 +50,51 @@ function ResetForm() {
   }
 
   return (
-    <EditorialShell
-      label="Security"
-      navRightHref="/login"
-      navRightLabel="Sign in"
-      left={
-        <>
-          <div>
-            <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted">
-              Credentials
-            </p>
-            <h1 className="text-perforated mt-4 font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-7xl">
-              Reset password
-            </h1>
-            <p className="mt-6 max-w-md text-base text-muted">
-              Choose a new password for your Noirly account.
-            </p>
-          </div>
-          <DotMatrixClock className="text-5xl md:text-7xl" />
-        </>
+    <AuthShell
+      title="Reset password"
+      lead="Choose a new password for your Noirly account."
+      footer={
+        <TextLink href="/login">
+          {ok ? "Continue to sign in" : "Back to sign in"}
+        </TextLink>
       }
-      right={
-        <>
-          {submitting ? <BusyOverlay label="Updating password" /> : null}
-          <form className="flex flex-col gap-6" onSubmit={onSubmit}>
-            {!tokenFromQuery ? (
-              <Field
-                label="Reset token"
-                value={token}
-                onChange={(event) => setToken(event.target.value)}
-                required
-              />
-            ) : null}
-            <Field
-              label="New password"
-              name="newPassword"
-              type="password"
-              placeholder="••••••••••"
+    >
+      {submitting ? <BusyOverlay label="Updating password" /> : null}
+      <div className="flex flex-col gap-6">
+        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+          {!tokenFromQuery ? (
+            <FormField
+              label="Reset token"
+              value={token}
+              onChange={(event) => setToken(event.target.value)}
               required
-              autoComplete="new-password"
             />
-            <Field
-              label="Confirm password"
-              name="confirmPassword"
-              type="password"
-              placeholder="••••••••••"
-              required
-              autoComplete="new-password"
-            />
-            <ActionButton type="submit" busy={submitting} busyLabel="Updating">
-              Reset password
-            </ActionButton>
-          </form>
-          {message ? <Notice>{message}</Notice> : null}
-          {ok ? (
-            <TextLink href="/login" tone="panel">
-              Continue to sign in
-            </TextLink>
-          ) : (
-            <TextLink href="/login" tone="panel">
-              Back to sign in
-            </TextLink>
-          )}
-        </>
-      }
-    />
+          ) : null}
+          <FormField
+            label="New password"
+            name="newPassword"
+            type="password"
+            placeholder="••••••••••"
+            required
+            autoComplete="new-password"
+          />
+          <FormField
+            label="Confirm password"
+            name="confirmPassword"
+            type="password"
+            placeholder="••••••••••"
+            required
+            autoComplete="new-password"
+          />
+          <SubmitButton busy={submitting} busyLabel="Updating">
+            Reset password
+          </SubmitButton>
+        </form>
+        {message ? (
+          <Notice tone={ok ? "success" : "error"}>{message}</Notice>
+        ) : null}
+      </div>
+    </AuthShell>
   );
 }
 

@@ -2,12 +2,9 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { TopNav } from "@/components/identity/TopNav";
-import { VerticalLabel } from "@/components/identity/VerticalLabel";
-import { ActionLink } from "@/components/identity/Buttons";
+import { AuthShell, Button } from "@noirly-dev/ui";
+import { ScreenFallback, TextLink } from "@/components/auth-ui";
 import { readOauthReturnCookie, sanitizeReturnTo } from "@/lib/auth/return-to";
-import { DotMatrixNumeral } from "@/components/identity/DotMatrix";
-import { ScreenFallback } from "@/components/identity/EditorialShell";
 
 type VerifyStatus =
   | "loading"
@@ -20,93 +17,45 @@ type VerifyStatus =
 
 const copy: Record<
   Exclude<VerifyStatus, "loading">,
-  { title: string; body: string; cta: string; href: string; code: string }
+  { title: string; body: string; cta: string; href: string }
 > = {
   verified: {
     title: "Email verified",
     body: "Your Noirly account has been successfully verified.",
     cta: "Continue to Noirly",
     href: "/login",
-    code: "OK",
   },
   already_verified: {
     title: "Already verified",
     body: "Your email address has already been verified.",
     cta: "Continue to Noirly",
     href: "/login",
-    code: "01",
   },
   expired: {
     title: "Link expired",
     body: "This verification link has expired.",
     cta: "Send a new verification email",
     href: "/check-email",
-    code: "--",
   },
   invalid: {
     title: "Link invalid",
     body: "This verification link is invalid or has already been used.",
     cta: "Send a new verification email",
     href: "/check-email",
-    code: "--",
   },
   used: {
     title: "Link used",
     body: "This verification link has already been used.",
     cta: "Send a new verification email",
     href: "/check-email",
-    code: "--",
   },
   missing: {
     title: "Link missing",
     body: "This verification link is invalid or has already been used.",
     cta: "Send a new verification email",
     href: "/check-email",
-    code: "--",
   },
 };
-
-function VerifyFrame({
-  title,
-  body,
-  code,
-  cta,
-  href,
-}: {
-  title: string;
-  body: string;
-  code: string;
-  cta: string;
-  href: string;
-}) {
-  return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <TopNav rightHref="/login" rightLabel="Sign in" />
-      <div className="flex flex-1 flex-col lg:flex-row">
-        <VerticalLabel>Status</VerticalLabel>
-        <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <section className="px-5 py-10 md:px-12">
-            <DotMatrixNumeral className="text-7xl md:text-9xl">{code}</DotMatrixNumeral>
-          </section>
-          <section className="bg-panel px-5 py-12 text-panel-ink md:px-12 md:py-16">
-            <h1 className="text-perforated font-display text-5xl leading-[0.9] font-bold tracking-[-0.05em] uppercase md:text-7xl">
-              {title}
-            </h1>
-            <p className="mt-6 max-w-xl text-base text-panel-ink/70">{body}</p>
-            <div className="mt-10 flex flex-wrap gap-3">
-              <ActionLink href={href} tone="panel">
-                {cta}
-              </ActionLink>
-              <ActionLink href="/login" tone="panel" outline>
-                Sign in
-              </ActionLink>
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function VerifyContent() {
   const params = useSearchParams();
@@ -157,13 +106,11 @@ function VerifyContent() {
 
   if (status === "loading") {
     return (
-      <VerifyFrame
-        title="Verifying your email"
-        body="Please wait."
-        code=".."
-        cta="Sign in"
-        href="/login"
-      />
+      <AuthShell title="Verifying your email" lead="Please wait.">
+        <p className="text-center text-sm text-[var(--muted-foreground)]">
+          Confirming your verification link…
+        </p>
+      </AuthShell>
     );
   }
 
@@ -174,17 +121,26 @@ function VerifyContent() {
       : view.href;
 
   return (
-    <VerifyFrame
+    <AuthShell
       title={view.title}
-      body={
+      lead={
         continueHref !== view.href
           ? `${view.body} Continue to return to the app that sent you here.`
           : view.body
       }
-      code={view.code}
-      cta={continueHref !== view.href ? "Continue to app" : view.cta}
-      href={continueHref}
-    />
+      footer={<TextLink href="/login">Sign in</TextLink>}
+    >
+      <div className="flex flex-wrap gap-3">
+        <Button asChild>
+          <a href={continueHref}>
+            {continueHref !== view.href ? "Continue to app" : view.cta}
+          </a>
+        </Button>
+        <Button variant="secondary" asChild>
+          <a href="/login">Sign in</a>
+        </Button>
+      </div>
+    </AuthShell>
   );
 }
 
