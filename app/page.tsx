@@ -1,5 +1,14 @@
 import Link from "next/link";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@noirly-dev/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  PageContainer,
+  SHELL_GUTTER_CLASS,
+} from "@noirly-dev/ui";
 
 const endpoints = [
   { href: "/login", title: "Login", copy: "Access the secure portal." },
@@ -25,7 +34,7 @@ export default function Home() {
         className="aura pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2"
         aria-hidden
       />
-      <header className="relative z-10 border-b border-[var(--hairline)] px-6 py-4">
+      <header className={`relative z-10 border-b border-[var(--hairline)] py-4 ${SHELL_GUTTER_CLASS}`}>
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <span className="font-display text-lg font-semibold tracking-tight">
             Noirly Identity
@@ -36,7 +45,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+      <PageContainer size="lg" className="flex flex-1 flex-col items-center justify-center text-center">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
           OpenID Connect
         </p>
@@ -55,9 +64,9 @@ export default function Home() {
             <Link href="/register">Register</Link>
           </Button>
         </div>
-      </main>
+      </PageContainer>
 
-      <section className="relative z-10 mx-auto grid w-full max-w-5xl gap-4 px-6 pb-16 md:grid-cols-2 lg:grid-cols-3">
+      <PageContainer size="lg" className="grid gap-4 pb-16 md:grid-cols-2 lg:grid-cols-3">
         {endpoints.map((item) => (
           <Link key={item.href} href={item.href} className="group">
             <Card className="h-full transition-colors group-hover:border-[var(--accent)]/30">
@@ -73,9 +82,11 @@ export default function Home() {
             </Card>
           </Link>
         ))}
-      </section>
+      </PageContainer>
 
-      <footer className="relative z-10 border-t border-[var(--hairline)] px-6 py-6 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
+      <footer
+        className={`relative z-10 border-t border-[var(--hairline)] py-6 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--muted-foreground)] ${SHELL_GUTTER_CLASS}`}
+      >
         Noirly Identity · Auth / OIDC / PKCE
       </footer>
     </div>

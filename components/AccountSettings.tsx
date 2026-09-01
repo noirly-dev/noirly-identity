@@ -133,6 +133,8 @@ export function AccountSettings({ initialUser }: Props) {
       <AuthShell
         title="Identity"
         lead="Name, email, and password for every Noirly product."
+        size="lg"
+        align="top"
         className="py-8"
         footer={
           <div className="flex flex-wrap items-center justify-center gap-4">

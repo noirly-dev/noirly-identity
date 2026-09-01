@@ -356,6 +356,8 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
       <AuthShell
         title="OAuth apps"
         lead="Register Flow, Ledger, Pulse, or any future Noirly app."
+        size="lg"
+        align="top"
         className="py-8"
         footer={<TextLink href="/account">Back to account</TextLink>}
       >

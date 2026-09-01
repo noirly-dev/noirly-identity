@@ -81,6 +81,9 @@ function ConsentForm() {
     <AuthShell
       title="Authorize application"
       lead={`${clientId} requests access to your Noirly Identity account.`}
+      logo={
+        <span className="text-[10px] font-medium uppercase tracking-[0.14em]">App</span>
+      }
     >
       {busy ? (
         <BusyOverlay
@@ -88,9 +91,6 @@ function ConsentForm() {
         />
       ) : null}
       <div className="flex flex-col gap-6">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[var(--hairline)] text-[10px] uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
-          App
-        </div>
         <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
           Requested scopes
         </p>
