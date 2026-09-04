@@ -9,14 +9,20 @@ importers:
   .:
     dependencies:
       '@noirly-dev/ui':
-        specifier: ^0.1.1
-        version: 0.1.1(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(lucide-react@0.544.0(react@19.2.8))(next@16.3.0(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(tailwindcss@4.3.3)
+        specifier: ^0.3.0
+        version: 0.3.0(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(lenis@1.3.26(react@19.2.8))(lucide-react@0.544.0(react@19.2.8))(next@16.3.0(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(tailwindcss@4.3.3)
       argon2:
         specifier: ^0.45.1
         version: 0.45.1
+      framer-motion:
+        specifier: ^13.1.1
+        version: 13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       jose:
         specifier: ^6.2.8
         version: 6.2.10
+      lenis:
+        specifier: ^1.3.26
+        version: 1.3.26(react@19.2.8)
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.2.8)
@@ -648,9 +654,11 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
-  '@noirly-dev/ui@0.1.1':
-    resolution: {integrity: sha512-DQKWlA/2fL4coYt1+r2XavRNOP5Qk3Kw2rbEm6t4G2dHBeNoojxi3bb+N0fWXVHNYMxlstTMKAV7pqhyao10jw==, tarball: https://npm.pkg.github.com/download/@noirly-dev/ui/0.1.1/d434189412f3b4bc7ecdeb4e4a8ae9b53cdb0967}
+  '@noirly-dev/ui@0.3.0':
+    resolution: {integrity: sha512-9p35gfn2JSBhUhP7vcXDfLRwM9HtPIyRdY/vJvqWEIxn1rQZbkB10MutmijE8+fdQOPXA7WJjiF/PxFODyd1qw==, tarball: https://npm.pkg.github.com/download/@noirly-dev/ui/0.3.0/f3157590fc6a3bed40f279b01406b9a2c12e5e43}
     peerDependencies:
+      framer-motion: '>=12'
+      lenis: '>=1.3'
       lucide-react: '>=0.400.0'
       next: '>=16'
       react: '>=18'
@@ -1765,6 +1773,17 @@ packages:
     resolution: {integrity: sha512-dKx12eRCVIzqCxFGplyFKJMPvLEWgmNtUrpTiJIR5u97zEhRG8ySrtboPHZXx7daLxQVrl643cTzbab2tkQjxg==}
     engines: {node: '>= 0.4'}
 
+  framer-motion@13.2.0:
+    resolution: {integrity: sha512-9E33ebgMaO33w1nN/jEdW8z3/GO483fMi4rqbMG9rt83XgW9QLKRe4NcmJ8s+fQ3O34++UHrIQwlIWGIWTITjA==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -2059,6 +2078,20 @@ packages:
     resolution: {integrity: sha512-MbjN408fEndfiQXbFQ1vnd+1NoLDsnQW41410oQBXiyXDMYH5z505juWa4KUE1LqxRC7DgOgZDbKLxHIwm27hA==}
     engines: {node: '>=0.10'}
 
+  lenis@1.3.26:
+    resolution: {integrity: sha512-s/xTCZCxTFvHbAN1OzuhNaN5YPJH2ail0XAkctKW1b+RUAG4nUL5UHLXwNko1h8aEeT2jspBXegMgPJd8zcuag==}
+    peerDependencies:
+      '@nuxt/kit': '>=3.0.0'
+      react: '>=17.0.0'
+      vue: '>=3.0.0'
+    peerDependenciesMeta:
+      '@nuxt/kit':
+        optional: true
+      react:
+        optional: true
+      vue:
+        optional: true
+
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
@@ -2335,6 +2368,12 @@ packages:
   mongoose@9.9.4:
     resolution: {integrity: sha512-Gc7buf0ExrOZ3t8MD8tVzTek7Qr5d+tEwj4GRFmHCtTZvpaDb38EVsXgCkYacPL9ICAftgS+FGe+dQHLRLHhcw==}
     engines: {node: '>=20.19.0'}
+
+  motion-dom@13.2.0:
+    resolution: {integrity: sha512-N6gdSoWRDk0Rh/fVtlqUtLs+fEN3ELFZI3cn3IQE9Mnf3E+Mh8wjO6MstzCOPFh4Yf0L1as5m2eUyYWj8ylVSQ==}
+
+  motion-utils@13.0.0:
+    resolution: {integrity: sha512-7DnN7TmbLcYXcG4RVadXIihWlyuM9afoUww8Y5Agg431kGKiuL2/OMyP4mJ5wLz+pvN3t5ySClLOaVXJ+wekRQ==}
 
   mpath@0.9.0:
     resolution: {integrity: sha512-ikJRQTk8hw5DEoFVxHG1Gn9T/xcjtdnOKIU1JTmGjZZlg9LST2mBLmcX3/ICIbgJydT2GOc15RnNy5mHmzfSew==}
@@ -3431,12 +3470,14 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.3
 
-  '@noirly-dev/ui@0.1.1(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(lucide-react@0.544.0(react@19.2.8))(next@16.3.0(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(tailwindcss@4.3.3)':
+  '@noirly-dev/ui@0.3.0(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(lenis@1.3.26(react@19.2.8))(lucide-react@0.544.0(react@19.2.8))(next@16.3.0(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(tailwindcss@4.3.3)':
     dependencies:
       '@radix-ui/react-slot': 1.3.3(@types/react@19.2.18)(react@19.2.8)
       '@radix-ui/react-switch': 1.3.7(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
+      framer-motion: 13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      lenis: 1.3.26(react@19.2.8)
       lucide-react: 0.544.0(react@19.2.8)
       next: 16.3.0(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
@@ -4625,6 +4666,15 @@ snapshots:
     dependencies:
       is-callable: 1.2.7
 
+  framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      motion-dom: 13.2.0
+      motion-utils: 13.0.0
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+
   fsevents@2.3.3:
     optional: true
 
@@ -4921,6 +4971,10 @@ snapshots:
     dependencies:
       language-subtag-registry: 0.3.23
 
+  lenis@1.3.26(react@19.2.8):
+    optionalDependencies:
+      react: 19.2.8
+
   levn@0.4.1:
     dependencies:
       prelude-ls: 1.2.1
@@ -5153,6 +5207,12 @@ snapshots:
       - mongodb-client-encryption
       - snappy
       - socks
+
+  motion-dom@13.2.0:
+    dependencies:
+      motion-utils: 13.0.0
+
+  motion-utils@13.0.0: {}
 
   mpath@0.9.0: {}
 
