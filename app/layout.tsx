@@ -8,7 +8,18 @@ export const metadata: Metadata = {
   title: "Noirly Identity",
   description: "Central authentication and SSO for the Noirly ecosystem",
   icons: {
-    icon: [{ url: "/brand-mark.svg", type: "image/svg+xml" }],
+    icon: [
+      {
+        url: "/brand-mark-light.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: "/brand-mark-dark.svg",
+        type: "image/svg+xml",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
   },
 };
 
