@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { AuthShell } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   BusyOverlay,
   FormField,
@@ -37,6 +38,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthShell
+      logo={<AuthLogo />}
       title="Forgot password"
       lead="Enter the email on your Noirly account. If it exists, we will send a reset link."
       footer={<TextLink href="/login">Back to sign in</TextLink>}

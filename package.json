@@ -20,7 +20,7 @@
     "email:test": "tsx scripts/test-smtp.ts"
   },
   "dependencies": {
-    "@noirly-dev/ui": "^0.3.0",
+    "@noirly-dev/ui": "^0.3.1",
     "argon2": "^0.45.1",
     "framer-motion": "^13.1.1",
     "jose": "^6.2.8",

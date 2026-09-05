@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthShell } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   BusyOverlay,
   FormField,
@@ -184,6 +185,7 @@ export function LoginForm({
 
   return (
     <AuthShell
+      logo={<AuthLogo />}
       title={selectAccount ? "Choose account" : "Sign in to Noirly"}
       lead="Access your Noirly identity across the ecosystem."
       footer={

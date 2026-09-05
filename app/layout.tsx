@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
 import { NoirlyHead, noirlyFontClassName } from "@noirly-dev/ui";
 import { NoirlyExperience } from "@noirly-dev/ui/experience";
+import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Noirly Identity",
   description: "Central authentication and SSO for the Noirly ecosystem",
+  icons: {
+    icon: [{ url: "/brand-mark.svg", type: "image/svg+xml" }],
+  },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="en"
@@ -19,9 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <NoirlyHead themeId="gold" />
       </head>
-      <body className={`${noirlyFontClassName} flex min-h-full flex-col antialiased`}>
+      <body className={`${noirlyFontClassName} flex min-h-dvh flex-col antialiased`}>
         <NoirlyExperience mark="Noirly Identity">
-          {children}
+          <AppProviders>{children}</AppProviders>
         </NoirlyExperience>
       </body>
     </html>

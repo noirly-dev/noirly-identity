@@ -1,93 +1,95 @@
 import Link from "next/link";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  PageContainer,
-  SHELL_GUTTER_CLASS,
-} from "@noirly-dev/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@noirly-dev/ui";
+import { BrandMark } from "@/components/BrandMark";
+import { MarketingHeader } from "@/components/MarketingHeader";
 
-const endpoints = [
-  { href: "/login", title: "Login", copy: "Access the secure portal." },
-  { href: "/register", title: "Register", copy: "Provision a new identity token." },
-  { href: "/account", title: "Account", copy: "Profile, password, and session." },
-  { href: "/check-email", title: "Check email", copy: "Complete verification." },
+const features = [
   {
-    href: "/.well-known/openid-configuration",
-    title: "OpenID configuration",
-    copy: "/.well-known/openid-configuration",
+    title: "One account",
+    copy: "Sign in once and carry the same identity across Flow, Ledger, Pulse, and every Noirly app.",
   },
   {
-    href: "/.well-known/jwks.json",
-    title: "JWKS",
-    copy: "/.well-known/jwks.json",
+    title: "Email & Google",
+    copy: "Password login, Google, and One Tap — verification handled in the same place.",
+  },
+  {
+    title: "OpenID Connect",
+    copy: "Standards-based OAuth and OIDC for every product client, with PKCE and consent.",
+  },
+  {
+    title: "Secure by default",
+    copy: "CSRF protection, hashed passwords, and short-lived tokens for every session.",
+  },
+  {
+    title: "Account control",
+    copy: "Update your profile and password in one place. Admins can register OAuth apps.",
+  },
+  {
+    title: "Popup-ready",
+    copy: "Product apps open Identity in a secure popup and return when you are signed in.",
   },
 ];
 
 export default function Home() {
   return (
-    <div className="relative flex min-h-dvh flex-col">
-      <div
-        className="aura pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2"
-        aria-hidden
-      />
-      <header className={`relative z-10 border-b border-[var(--hairline)] py-4 ${SHELL_GUTTER_CLASS}`}>
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <span className="font-display text-lg font-semibold tracking-tight">
-            Noirly Identity
+    <div className="flex min-h-dvh flex-1 flex-col">
+      <MarketingHeader />
+
+      <main id="main" className="flex flex-1 flex-col">
+        <section className="shell section-y">
+          <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+            <BrandMark className="h-20 w-20" />
+            <p className="eyebrow mt-7">Authentication &amp; SSO</p>
+            <h1 className="display-lg mt-4 text-balance">
+              One identity for the whole Noirly ecosystem.
+            </h1>
+            <p className="lede mt-5 text-center">
+              Central sign-in, verification, and OpenID Connect for every Noirly
+              product — without a new password for each app.
+            </p>
+
+            <div className="mt-9 flex w-full max-w-xs flex-col gap-3">
+              <Button asChild size="lg" className="w-full">
+                <Link href="/login">Sign in</Link>
+              </Button>
+              <Button asChild size="lg" variant="secondary" className="w-full">
+                <Link href="/register">Create account</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="section-rule relative">
+          <div className="shell section-y">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="eyebrow justify-center">What it covers</p>
+              <h2 className="display-md mt-4">Built for every Noirly product</h2>
+            </div>
+
+            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {features.map((item) => (
+                <Card key={item.title} variant="interactive">
+                  <CardHeader>
+                    <CardTitle>{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="copy">{item.copy}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="section-rule relative">
+        <div className="shell flex flex-wrap items-center justify-between gap-4 py-7">
+          <span className="flex items-center gap-2.5">
+            <BrandMark className="h-6 w-6" />
+            <span className="meta">Noirly Identity</span>
           </span>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/login">Sign in</Link>
-          </Button>
+          <span className="meta">Auth · OIDC · PKCE</span>
         </div>
-      </header>
-
-      <PageContainer size="lg" className="flex flex-1 flex-col items-center justify-center text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-          OpenID Connect
-        </p>
-        <h1 className="mt-4 font-display text-5xl font-semibold tracking-tight md:text-7xl">
-          Identity
-        </h1>
-        <p className="mt-4 max-w-xl text-[var(--muted-foreground)]">
-          Central authentication and OpenID Connect provider for Noirly
-          applications.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button asChild>
-            <Link href="/login">Sign in</Link>
-          </Button>
-          <Button variant="secondary" asChild>
-            <Link href="/register">Register</Link>
-          </Button>
-        </div>
-      </PageContainer>
-
-      <PageContainer size="lg" className="grid gap-4 pb-16 md:grid-cols-2 lg:grid-cols-3">
-        {endpoints.map((item) => (
-          <Link key={item.href} href={item.href} className="group">
-            <Card className="h-full transition-colors group-hover:border-[var(--accent)]/30">
-              <CardHeader>
-                <CardTitle>{item.title}</CardTitle>
-                <CardDescription>{item.copy}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <span className="text-xs uppercase tracking-[0.12em] text-[var(--accent)]">
-                  Open
-                </span>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </PageContainer>
-
-      <footer
-        className={`relative z-10 border-t border-[var(--hairline)] py-6 text-center text-[10px] uppercase tracking-[0.16em] text-[var(--muted-foreground)] ${SHELL_GUTTER_CLASS}`}
-      >
-        Noirly Identity · Auth / OIDC / PKCE
       </footer>
     </div>
   );

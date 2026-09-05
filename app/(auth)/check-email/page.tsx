@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthShell } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   BusyOverlay,
   FormField,
@@ -87,6 +88,7 @@ function CheckEmailContent() {
 
   return (
     <AuthShell
+      logo={<AuthLogo />}
       title="Check your email"
       lead={
         masked

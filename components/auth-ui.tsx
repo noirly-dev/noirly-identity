@@ -10,6 +10,7 @@ import {
   Textarea,
   cn,
 } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   useState,
   type ComponentProps,
@@ -94,7 +95,7 @@ export function Notice({
 
 export function ScreenFallback({ title }: { title: string }) {
   return (
-    <AuthShell title={title} lead="Please wait…">
+    <AuthShell logo={<AuthLogo />} title={title} lead="Please wait…">
       <div className="flex justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
       </div>

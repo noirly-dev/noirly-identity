@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthShell, Button } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import { BusyOverlay, Notice, ScreenFallback } from "@/components/auth-ui";
 import { getCsrf } from "@/lib/auth/csrf-client";
 
@@ -81,9 +82,7 @@ function ConsentForm() {
     <AuthShell
       title="Authorize application"
       lead={`${clientId} requests access to your Noirly Identity account.`}
-      logo={
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em]">App</span>
-      }
+      logo={<AuthLogo />}
     >
       {busy ? (
         <BusyOverlay

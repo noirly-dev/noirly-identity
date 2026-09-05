@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AuthShell, Button, Label } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   BusyOverlay,
   FormField,
@@ -354,6 +355,7 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
     <>
       {busy ? <BusyOverlay label={busyLabel} /> : null}
       <AuthShell
+        logo={<AuthLogo />}
         title="OAuth apps"
         lead="Register Flow, Ledger, Pulse, or any future Noirly app."
         size="lg"

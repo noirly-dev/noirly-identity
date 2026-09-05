@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthShell, Button } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import { ScreenFallback, TextLink } from "@/components/auth-ui";
 import { readOauthReturnCookie, sanitizeReturnTo } from "@/lib/auth/return-to";
 
@@ -106,7 +107,7 @@ function VerifyContent() {
 
   if (status === "loading") {
     return (
-      <AuthShell title="Verifying your email" lead="Please wait.">
+      <AuthShell logo={<AuthLogo />} title="Verifying your email" lead="Please wait.">
         <p className="text-center text-sm text-[var(--muted-foreground)]">
           Confirming your verification link…
         </p>
@@ -122,6 +123,7 @@ function VerifyContent() {
 
   return (
     <AuthShell
+      logo={<AuthLogo />}
       title={view.title}
       lead={
         continueHref !== view.href

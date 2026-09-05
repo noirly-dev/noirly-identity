@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { AuthShell } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   BusyOverlay,
   FormField,
@@ -131,6 +132,7 @@ export function AccountSettings({ initialUser }: Props) {
         />
       ) : null}
       <AuthShell
+        logo={<AuthLogo />}
         title="Identity"
         lead="Name, email, and password for every Noirly product."
         size="lg"

@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthShell } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   BusyOverlay,
   FormField,
@@ -51,6 +52,7 @@ function ResetForm() {
 
   return (
     <AuthShell
+      logo={<AuthLogo />}
       title="Reset password"
       lead="Choose a new password for your Noirly account."
       footer={

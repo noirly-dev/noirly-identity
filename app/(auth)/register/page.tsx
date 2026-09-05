@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthShell } from "@noirly-dev/ui";
+import { AuthLogo } from "@/components/AuthLogo";
 import {
   BusyOverlay,
   FormField,
@@ -82,6 +83,7 @@ function RegisterForm() {
 
   return (
     <AuthShell
+      logo={<AuthLogo />}
       title="Create account"
       lead="One Noirly identity across Flow, CRM, Docs, and the rest of the ecosystem."
       footer={<TextLink href={loginHref}>Already have an account? Sign in</TextLink>}

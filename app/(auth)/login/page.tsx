@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { LoginPageClient } from "@/app/login/LoginForm";
+import { LoginPageClient } from "./LoginForm";
 import { withDb } from "@/lib/api/with-db";
 import { getCurrentUser } from "@/lib/auth/auth-service";
 import { isPopupLogin, sanitizeReturnTo } from "@/lib/auth/return-to";
