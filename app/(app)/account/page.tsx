@@ -1,14 +1,9 @@
 import { redirect } from "next/navigation";
 import { AccountSettings } from "@/components/AccountSettings";
-import { withDb } from "@/lib/api/with-db";
-import { getCurrentUser } from "@/lib/auth/auth-service";
-import { getSessionTokenFromCookies } from "@/lib/security/cookies";
+import { getRequestUser } from "@/lib/auth/request-user";
 
 export default async function AccountPage() {
-  const user = await withDb(async () => {
-    const token = await getSessionTokenFromCookies();
-    return getCurrentUser(token);
-  });
+  const user = await getRequestUser();
 
   if (!user) {
     redirect("/login?return_to=/account");

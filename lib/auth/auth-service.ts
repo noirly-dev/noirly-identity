@@ -156,7 +156,7 @@ export async function getCurrentUser(
   if (!ctx) {
     return null;
   }
-  const user = await User.findById(ctx.userId).select("+passwordHash");
+  const user = await User.findById(ctx.userId).select("+passwordHash").lean();
   if (!user || user.status === "disabled") {
     return null;
   }

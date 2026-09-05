@@ -1,7 +1,27 @@
 import type { UserDocument } from "@/models/User";
 import type { PublicUser } from "@/types";
 
-export function toPublicUser(user: UserDocument): PublicUser {
+/** Hydrated or lean user docs both work — only needs public fields + optional hash. */
+type UserLike = Pick<
+  UserDocument,
+  | "email"
+  | "emailVerified"
+  | "firstName"
+  | "lastName"
+  | "displayName"
+  | "avatarUrl"
+  | "phoneNumber"
+  | "status"
+  | "roles"
+  | "createdAt"
+  | "updatedAt"
+  | "lastLoginAt"
+> & {
+  _id: UserDocument["_id"] | string;
+  passwordHash?: string | null;
+};
+
+export function toPublicUser(user: UserLike): PublicUser {
   return {
     id: String(user._id),
     email: user.email,

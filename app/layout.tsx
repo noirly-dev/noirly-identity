@@ -28,7 +28,7 @@ export default function RootLayout({
         <NoirlyHead themeId="gold" />
       </head>
       <body className={`${noirlyFontClassName} flex min-h-dvh flex-col antialiased`}>
-        <NoirlyExperience mark="Noirly Identity">
+        <NoirlyExperience mark="Noirly Identity" pageTransition={false}>
           <AppProviders>{children}</AppProviders>
         </NoirlyExperience>
       </body>

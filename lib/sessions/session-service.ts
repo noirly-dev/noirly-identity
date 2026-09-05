@@ -10,10 +10,22 @@ export type CreateSessionInput = {
   ttlSeconds?: number;
 };
 
+/** Lean session fields callers need after validation. */
+export type ValidatedSession = {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  expiresAt: Date;
+  createdAt: Date;
+  lastActivityAt: Date;
+  revokedAt: Date | null;
+};
+
 export type SessionContext = {
-  session: SessionDocument;
+  session: ValidatedSession;
   userId: string;
 };
+
+const ACTIVITY_THROTTLE_MS = 5 * 60 * 1000;
 
 export async function createSession(
   input: CreateSessionInput,
@@ -35,6 +47,10 @@ export async function createSession(
   return { token, session };
 }
 
+/**
+ * Validate a session token without blocking on a write.
+ * Activity is updated at most every 5 minutes, fire-and-forget.
+ */
 export async function validateSession(
   token: string | null | undefined,
 ): Promise<SessionContext | null> {
@@ -42,7 +58,7 @@ export async function validateSession(
     return null;
   }
 
-  const session = await Session.findOne({ tokenHash: hashToken(token) });
+  const session = await Session.findOne({ tokenHash: hashToken(token) }).lean();
   if (!session) {
     return null;
   }
@@ -55,11 +71,25 @@ export async function validateSession(
     return null;
   }
 
-  session.lastActivityAt = new Date();
-  await session.save();
+  const lastActivity = session.lastActivityAt
+    ? new Date(session.lastActivityAt).getTime()
+    : 0;
+  if (Date.now() - lastActivity > ACTIVITY_THROTTLE_MS) {
+    void Session.updateOne(
+      { _id: session._id },
+      { $set: { lastActivityAt: new Date() } },
+    ).exec();
+  }
 
   return {
-    session,
+    session: {
+      _id: session._id,
+      userId: session.userId,
+      expiresAt: session.expiresAt,
+      createdAt: session.createdAt,
+      lastActivityAt: session.lastActivityAt,
+      revokedAt: session.revokedAt ?? null,
+    },
     userId: String(session.userId),
   };
 }
