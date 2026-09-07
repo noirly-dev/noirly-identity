@@ -38,7 +38,7 @@ export default function Home() {
       <main id="main" className="flex flex-1 flex-col">
         <section className="shell section-y">
           <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-            <BrandMark className="h-20 w-20" />
+            <BrandMark className="size-[4.25rem] md:size-20" />
             <p className="eyebrow mt-7">Authentication &amp; SSO</p>
             <h1 className="display-lg mt-4 text-balance">
               One identity for the whole Noirly ecosystem.
@@ -84,9 +84,11 @@ export default function Home() {
 
       <footer className="section-rule relative">
         <div className="shell flex flex-wrap items-center justify-between gap-4 py-7">
-          <span className="flex items-center gap-2.5">
-            <BrandMark className="h-6 w-6" />
-            <span className="meta">Noirly Identity</span>
+          <span className="flex items-center gap-4 text-[var(--text)]">
+            <span className="inline-flex size-[4.25rem] shrink-0 md:size-20">
+              <BrandMark className="size-full" />
+            </span>
+            <span className="display-md">Noirly Identity</span>
           </span>
           <span className="meta">Auth · OIDC · PKCE</span>
         </div>
