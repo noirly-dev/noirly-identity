@@ -1,8 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="14" fill="#0a0a08"/>
-  <path
-    fill="#ffe66d"
-    d="M32 10c-7.732 0-14 6.268-14 14 0 5.522 3.208 10.286 7.85 12.52L24 50h16l-1.85-13.48C42.792 34.286 46 29.522 46 24c0-7.732-6.268-14-14-14zm0 8a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"
-  />
-  <circle cx="32" cy="24" r="2.5" fill="#0a0a08"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Noirly Identity mark">
+  <title>Noirly Identity — monochrome</title>
+  <!-- Default tint for standalone use. Delete this rule to inherit color from the parent. -->
+  <style>svg { color: #C9A44A; }</style>
+  <defs>
+    <!-- The seam: a keyed tab that mates with one socket and no other -->
+    <mask id="nim-kerf">
+      <rect width="1024" height="1024" fill="#fff"/>
+      <path d="M225 512 H444 A68 68 0 0 1 580 512 H799"
+            fill="none" stroke="#000" stroke-width="30"/>
+    </mask>
+  </defs>
+  <!-- Corner rounding comes from the round-joined stroke, not from arc segments -->
+  <path d="M512 234 L753 373 L753 651 L512 790 L271 651 L271 373 Z"
+        fill="currentColor" stroke="currentColor" stroke-width="60"
+        stroke-linejoin="round" mask="url(#nim-kerf)"/>
 </svg>
