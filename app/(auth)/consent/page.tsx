@@ -36,7 +36,7 @@ function ConsentForm() {
         credentials: "include",
         headers: {
           "content-type": "application/json",
-          "x-csrf-token": csrf,
+          "x-csrf-token": csrf || (await getCsrf()),
         },
         body: JSON.stringify({
           client_id: params.get("client_id"),

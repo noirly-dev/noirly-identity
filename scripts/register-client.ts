@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import mongoose from "mongoose";
 import { generateSecureToken } from "../lib/security/crypto";
@@ -34,7 +34,8 @@ function csv(value: string): string[] {
 }
 
 function upsertEnvValue(filePath: string, key: string, value: string) {
-  const current = readFileSync(filePath, "utf8");
+  // First-time setup: the product app may not have an .env.local yet.
+  const current = existsSync(filePath) ? readFileSync(filePath, "utf8") : "";
   const next = current.includes(`${key}=`)
     ? current.replace(new RegExp(`^${key}=.*$`, "m"), `${key}=${value}`)
     : `${current.trimEnd()}\n${key}=${value}\n`;
@@ -106,7 +107,7 @@ async function main() {
   await OAuthClient.findOneAndUpdate(
     { clientId },
     { $set: fields, $setOnInsert: { clientId } },
-    { upsert: true, new: true },
+    { upsert: true, returnDocument: "after" },
   );
 
   const written = new Set<string>([connectedDb]);

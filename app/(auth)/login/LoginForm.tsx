@@ -66,7 +66,7 @@ export function LoginForm({
         credentials: "include",
         headers: {
           "content-type": "application/json",
-          "x-csrf-token": csrf,
+          "x-csrf-token": csrf || (await getCsrf()),
         },
         body: JSON.stringify({
           email: submittedEmail,

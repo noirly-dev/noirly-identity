@@ -44,7 +44,7 @@ export function AccountSettings({ initialUser }: Props) {
         credentials: "include",
         headers: {
           "content-type": "application/json",
-          "x-csrf-token": csrf,
+          "x-csrf-token": csrf || (await getCsrf()),
         },
         body: JSON.stringify({
           firstName: form.get("firstName"),
@@ -83,7 +83,7 @@ export function AccountSettings({ initialUser }: Props) {
         credentials: "include",
         headers: {
           "content-type": "application/json",
-          "x-csrf-token": csrf,
+          "x-csrf-token": csrf || (await getCsrf()),
         },
         body: JSON.stringify({
           currentPassword: form.get("currentPassword"),
@@ -111,7 +111,7 @@ export function AccountSettings({ initialUser }: Props) {
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
-        headers: { "x-csrf-token": csrf },
+        headers: { "x-csrf-token": csrf || (await getCsrf()) },
       });
     } finally {
       window.location.assign("/login");

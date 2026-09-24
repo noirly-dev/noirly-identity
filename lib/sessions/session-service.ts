@@ -105,7 +105,7 @@ export async function refreshSessionExpiry(
       expiresAt: new Date(Date.now() + ttl * 1000),
       lastActivityAt: new Date(),
     },
-    { new: true },
+    { returnDocument: "after" },
   );
 }
 
