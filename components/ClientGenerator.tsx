@@ -92,7 +92,7 @@ export function ClientGenerator({ issuer, initialClients }: Props) {
       credentials: "include",
       headers: {
         "content-type": "application/json",
-        "x-csrf-token": csrf,
+        "x-csrf-token": csrf || (await getCsrf()),
         ...(init.headers ?? {}),
       },
     });
