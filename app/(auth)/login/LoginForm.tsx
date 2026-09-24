@@ -210,7 +210,7 @@ export function LoginForm({
             {accountsBlock}
           </>
         )}
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+        <form method="post" className="flex flex-col gap-4" onSubmit={onSubmit}>
           <FormField
             label="Email"
             name="email"
@@ -229,7 +229,9 @@ export function LoginForm({
             required
             autoComplete="current-password"
           />
-          <SubmitButton busy={submitting} busyLabel="Signing in">
+          {/* Enabled once hydrated and the CSRF token has loaded, so an early
+              click cannot fall back to a native form submission. */}
+          <SubmitButton busy={submitting} busyLabel="Signing in" disabled={!csrf}>
             Sign in
           </SubmitButton>
         </form>

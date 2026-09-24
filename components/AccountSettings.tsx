@@ -177,7 +177,7 @@ export function AccountSettings({ initialUser }: Props) {
         </div>
 
         <div className="flex flex-col gap-10">
-          <form className="flex flex-col gap-4" onSubmit={onSaveProfile}>
+          <form method="post" className="flex flex-col gap-4" onSubmit={onSaveProfile}>
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
                 Profile
@@ -230,6 +230,7 @@ export function AccountSettings({ initialUser }: Props) {
 
             {user.hasPassword ? (
               <form
+                method="post"
                 className="mt-5 flex flex-col gap-4"
                 onSubmit={onChangePassword}
               >

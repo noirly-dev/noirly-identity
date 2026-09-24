@@ -106,7 +106,7 @@ function RegisterForm() {
             <OrDivider />
           </>
         ) : null}
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+        <form method="post" className="flex flex-col gap-4" onSubmit={onSubmit}>
           <FormField
             label="First name"
             name="firstName"
@@ -137,7 +137,7 @@ function RegisterForm() {
             required
             autoComplete="new-password"
           />
-          <SubmitButton busy={submitting} busyLabel="Creating account">
+          <SubmitButton busy={submitting} busyLabel="Creating account" disabled={!csrf}>
             Register
           </SubmitButton>
         </form>

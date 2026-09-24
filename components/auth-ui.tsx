@@ -175,11 +175,11 @@ export function SubmitButton({
 }) {
   return (
     <Button
+      {...props}
       type="submit"
       className={cn("w-full", className)}
       disabled={busy || props.disabled}
       aria-busy={busy}
-      {...props}
     >
       {busy ? (
         <>

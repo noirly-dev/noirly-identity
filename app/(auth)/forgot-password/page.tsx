@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
     >
       {submitting ? <BusyOverlay label="Sending reset link" /> : null}
       <div className="flex flex-col gap-6">
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+        <form method="post" className="flex flex-col gap-4" onSubmit={onSubmit}>
           <FormField
             label="Email"
             name="email"
